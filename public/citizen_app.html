@@ -1,0 +1,1507 @@
+
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>National Public Works — Citizen Portal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gov: {
+                            base: '#0f172a',
+                            panel: '#1e293b',
+                            highlight: '#0284c7',
+                            light: '#f8fafc'
+                        },
+                        sector: {
+                            water: '#0284c7',
+                            road: '#d97706',
+                            power: '#059669',
+                            waste: '#e11d48'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'up': '0 -4px 25px -5px rgba(0, 0, 0, 0.08)',
+                        'floating': '0 15px 35px -5px rgba(2, 132, 199, 0.3)'
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.2s ease-out forwards',
+                        'pulse-ring': 'pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        pulseRing: {
+                            '0%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(225, 29, 72, 0.7)' },
+                            '70%': { transform: 'scale(1.1)', boxShadow: '0 0 0 15px rgba(225, 29, 72, 0)' },
+                            '100%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(225, 29, 72, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+ 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+ 
+    <style>
+        body, html { 
+            margin: 0; padding: 0; 
+            background-color: #f1f5f9; 
+            height: 100%; width: 100%; 
+            display: flex; flex-direction: column;
+            overflow: hidden; 
+            overscroll-behavior-y: none;
+        }
+ 
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+ 
+        .tab-content { 
+            display: none; 
+            height: 100%; 
+            overflow-y: auto; 
+            padding-bottom: 90px; 
+            -webkit-overflow-scrolling: touch;
+        }
+        @media (min-width: 768px) { .tab-content { padding-bottom: 40px; } }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-out forwards; }
+ 
+        .desktop-container { max-width: 1280px; margin: 0 auto; width: 100%; }
+ 
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #64748b; transition: all 0.2s; width: 33%; cursor: pointer;
+        }
+        .nav-item.active { color: #0284c7; }
+        .nav-item .material-symbols-outlined { font-size: 24px; margin-bottom: 2px; transition: transform 0.2s; }
+        .nav-item.active .material-symbols-outlined { font-variation-settings: 'FILL' 1; transform: translateY(-2px); }
+ 
+        .fab-button {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.6);
+            z-index: 100;
+            color: white;
+            border: 4px solid #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        @media (min-width: 768px) { .fab-button { display: none; } }
+        .fab-button:active { transform: translateX(-50%) scale(0.95); }
+        .fab-button:hover { box-shadow: 0 15px 35px -5px rgba(2, 132, 199, 0.8); }
+ 
+        .leaflet-pane { z-index: 10; }
+        .leaflet-top, .leaflet-bottom { z-index: 20; }
+        #lang-menu { z-index: 9999 !important; }
+ 
+        .gps-ping {
+            width: 16px; height: 16px; background-color: #0ea5e9; border-radius: 50%;
+            border: 3px solid white; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .gps-pulse {
+            position: absolute; width: 40px; height: 40px; background-color: rgba(14, 165, 233, 0.3);
+            border-radius: 50%; top: -12px; left: -12px; animation: ping 2s infinite; z-index: -1;
+        }
+ 
+        #camera-feed {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            transform: scaleX(1);
+            transition: transform 0.3s ease;
+        }
+        .recording-pulse { animation: pulseRing 1.5s infinite; }
+        
+        .logo-container {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            flex-shrink: 0;
+        }
+        .logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+ 
+    <!-- ========================================== -->
+    <!-- HEADER -->
+    <!-- ========================================== -->
+    <header class="bg-white px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-[500] border-b border-slate-200 shadow-sm w-full shrink-0">
+        <div class="desktop-container flex items-center justify-between w-full">
+            
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="logo-container shadow-sm">
+                    <img src="assets/download.png" alt="Gov Logo">
+                </div>
+                <div class="flex flex-col justify-center">
+                    <h1 class="font-display font-bold text-slate-900 text-lg sm:text-xl leading-none tracking-tight" data-i18n="hdr_title">Public Works</h1>
+                    <span class="text-[9px] sm:text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1 leading-none" id="header-location" data-i18n="hdr_sub">Delhi-NCR Division</span>
+                </div>
+            </div>
+            
+            <nav class="hidden md:flex items-center gap-8 ml-auto mr-8">
+                <button onclick="switchTab('home', this)" class="desktop-nav-item font-semibold text-sky-600 border-b-2 border-sky-600 pb-1 transition-colors" data-i18n="nav_home">Home</button>
+                <button onclick="switchTab('activity', this)" class="desktop-nav-item font-semibold text-slate-500 hover:text-sky-600 pb-1 border-b-2 border-transparent transition-colors" data-i18n="tab_activity">My Reports</button>
+                <button onclick="switchTab('profile', this)" class="desktop-nav-item font-semibold text-slate-500 hover:text-sky-600 pb-1 border-b-2 border-transparent transition-colors" data-i18n="tab_profile">Profile</button>
+            </nav>
+ 
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                
+                <button onclick="window.location.href='new_new_index.html'" class="hidden md:flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm active:scale-95 border border-slate-200">
+                    <span class="material-symbols-outlined text-[18px]">dashboard</span> <span data-i18n="btn_dash">Dashboard</span>
+                </button>
+ 
+                <button onclick="openReportWizard()" class="hidden md:flex items-center gap-2 bg-gov-highlight hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span> <span data-i18n="wiz_title">New Report</span>
+                </button>
+ 
+                <div class="relative">
+                    <button onclick="toggleLangMenu()" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors shadow-sm active:scale-95">
+                        <span class="material-symbols-outlined text-[20px] sm:text-[22px]">translate</span>
+                    </button>
+                    
+                    <div id="lang-menu" class="absolute top-14 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 hidden flex-col gap-1 w-48 animate-fade-in origin-top-right">
+                        <button onclick="switchAppLang('en')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-3"><span class="w-6 text-center text-lg">🇬🇧</span> English</button>
+                        <button onclick="switchAppLang('hi')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-3"><span class="w-6 text-center text-lg">🇮🇳</span> हिन्दी</button>
+                        <button onclick="switchAppLang('zh')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-3"><span class="w-6 text-center text-lg">🇨🇳</span> 中文</button>
+                        <button onclick="switchAppLang('pt')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-3"><span class="w-6 text-center text-lg">🇧🇷</span> Português</button>
+                        <button onclick="switchAppLang('ru')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-3"><span class="w-6 text-center text-lg">🇷🇺</span> Русский</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+ 
+    <!-- ========================================== -->
+    <!-- TAB 1: HOME (DASHBOARD) -->
+    <!-- ========================================== -->
+    <main id="tab-home" class="tab-content active w-full">
+        <div class="desktop-container md:grid md:grid-cols-12 md:gap-8 md:p-8">
+            
+            <div class="md:col-span-8 flex flex-col gap-4 sm:gap-6">
+                <div class="px-4 sm:px-0 pt-4 sm:pt-0">
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-32 h-32 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div class="relative z-10 flex justify-between items-center">
+                            <div>
+                                <span class="text-white/70 text-[10px] sm:text-xs uppercase tracking-widest font-mono font-bold block mb-1.5" data-i18n="app_trust">CIVIC TRUST RATING</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl sm:text-5xl font-display font-bold text-white">850</span>
+                                    <span class="text-emerald-400 text-sm sm:text-base font-bold bg-emerald-400/10 px-2 py-0.5 rounded-lg border border-emerald-400/20">+15 pts</span>
+                                </div>
+                            </div>
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-emerald-400/30 border-t-emerald-400 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm shadow-inner">
+                                <span class="material-symbols-outlined text-emerald-400 text-[32px] sm:text-[40px]">verified_user</span>
+                            </div>
+                        </div>
+                        <div class="mt-5 pt-4 border-t border-white/10 flex items-start gap-3 bg-black/20 p-3 rounded-xl">
+                            <span class="material-symbols-outlined text-sky-400 text-[18px] shrink-0 mt-0.5">security</span>
+                            <p class="text-white/80 text-[11px] sm:text-xs leading-relaxed" data-i18n="app_trust_sub">Your verified reports are granted Level 2 Priority routing by the Municipal Authority, bypassing initial screening protocols.</p>
+                        </div>
+                    </div>
+                </div>
+ 
+                <div class="px-4 sm:px-0">
+                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-3" data-i18n="app_quick">Report Infrastructure Anomaly</h3>
+                    <div class="grid grid-cols-4 gap-3 sm:gap-5">
+                        <div onclick="openReportWizard('water')" class="flex flex-col items-center gap-2 cursor-pointer group bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-sky-300 transition-all">
+                            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 transition-transform group-active:scale-95 group-hover:bg-sky-100">
+                                <span class="material-symbols-outlined text-[24px] sm:text-[32px]">water_drop</span>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-700 text-center leading-tight" data-i18n="app_cat_water">Water &<br>Drainage</span>
+                        </div>
+                        <div onclick="openReportWizard('road')" class="flex flex-col items-center gap-2 cursor-pointer group bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-300 transition-all">
+                            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 transition-transform group-active:scale-95 group-hover:bg-amber-100">
+                                <span class="material-symbols-outlined text-[24px] sm:text-[32px]">add_road</span>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-700 text-center leading-tight" data-i18n="app_cat_road">Roads &<br>Transit</span>
+                        </div>
+                        <div onclick="openReportWizard('power')" class="flex flex-col items-center gap-2 cursor-pointer group bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all">
+                            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 transition-transform group-active:scale-95 group-hover:bg-emerald-100">
+                                <span class="material-symbols-outlined text-[24px] sm:text-[32px]">bolt</span>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-700 text-center leading-tight" data-i18n="app_cat_power">Power<br>Grid</span>
+                        </div>
+                        <div onclick="openReportWizard('waste')" class="flex flex-col items-center gap-2 cursor-pointer group bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-rose-300 transition-all">
+                            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 transition-transform group-active:scale-95 group-hover:bg-rose-100">
+                                <span class="material-symbols-outlined text-[24px] sm:text-[32px]">delete</span>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-semibold text-slate-700 text-center leading-tight" data-i18n="app_cat_waste">Public<br>Sanitation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="md:col-span-4 flex flex-col gap-4 sm:gap-6 mt-6 md:mt-0">
+                <div class="px-4 sm:px-0">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm sm:text-base font-bold text-slate-800" data-i18n="app_nearby">Infrastructure Near You</h3>
+                        <button onclick="locateOnMap()" class="text-[11px] sm:text-xs font-bold text-gov-highlight hover:underline" data-i18n="app_view_all">View Map</button>
+                    </div>
+                    <div class="w-full h-48 sm:h-64 bg-slate-300 rounded-3xl overflow-hidden border border-slate-200 relative shadow-sm">
+                        <div id="mini-map" class="w-full h-full relative z-[10]"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent z-20 flex flex-col justify-end p-5 pointer-events-none">
+                            <span class="text-white font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span data-i18n="app_active_works">3 Active Works</span>
+                            </span>
+                            <span class="text-white/80 text-[10px] sm:text-xs font-mono mt-0.5" data-i18n="app_radius">Within 2km radius of your location</span>
+                        </div>
+                    </div>
+                </div>
+ 
+                <div class="px-4 sm:px-0 mb-6">
+                    <h3 class="text-sm sm:text-base font-bold text-slate-800 mb-3" data-i18n="app_updates">Municipal Updates</h3>
+                    <div class="flex flex-col gap-3">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex gap-4 items-start hover:shadow-md transition-shadow cursor-pointer">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                                <span class="material-symbols-outlined text-[20px] sm:text-[24px]">check_circle</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="text-[9px] font-mono font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 uppercase" data-i18n="stat_resolved">Resolved</span>
+                                    <span class="text-[9px] text-slate-400 font-mono" data-i18n="time_2h">2 hours ago</span>
+                                </div>
+                                <h4 class="text-xs sm:text-sm font-bold text-slate-800 leading-tight mb-1" data-i18n="upd_title_1">Pothole Repair Complete</h4>
+                                <p class="text-[10px] sm:text-xs text-slate-500 leading-snug" data-i18n="upd_desc_1">Public Works Dept has completed surface milling and patching at Vasant Kunj Sector C.</p>
+                            </div>
+                        </div>
+ 
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex gap-4 items-start hover:shadow-md transition-shadow cursor-pointer">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                                <span class="material-symbols-outlined text-[20px] sm:text-[24px]">construction</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="text-[9px] font-mono font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200 uppercase" data-i18n="stat_progress">In Progress</span>
+                                    <span class="text-[9px] text-slate-400 font-mono" data-i18n="time_yest">Yesterday</span>
+                                </div>
+                                <h4 class="text-xs sm:text-sm font-bold text-slate-800 leading-tight mb-1" data-i18n="upd_title_2">Water Main Excavation</h4>
+                                <p class="text-[10px] sm:text-xs text-slate-500 leading-snug" data-i18n="upd_desc_2">Delhi Jal Board has initiated excavation protocols for pipe replacement in Ward 14.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+ 
+    <!-- ========================================== -->
+    <!-- TAB 2: ACTIVITY (HISTORY) -->
+    <!-- ========================================== -->
+    <main id="tab-activity" class="tab-content w-full bg-slate-50">
+        <div class="desktop-container">
+            <div class="px-5 py-4 border-b border-slate-200 bg-white sticky top-0 z-30 flex justify-between items-center">
+                <h2 class="font-display font-bold text-xl text-slate-900" data-i18n="tab_activity">My Reports</h2>
+                <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">UID: 9448-SYNC</span>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-4 max-w-2xl mx-auto" id="activity-list">
+                <!-- Dynamically populated via JS to ensure massive length and proper translations -->
+            </div>
+        </div>
+    </main>
+ 
+    <!-- ========================================== -->
+    <!-- TAB 3: PROFILE & SETTINGS -->
+    <!-- ========================================== -->
+    <main id="tab-profile" class="tab-content w-full bg-slate-50">
+        <div class="desktop-container">
+            <div class="bg-white px-5 py-4 border-b border-slate-200 sticky top-0 z-30 flex justify-between items-center">
+                <h2 class="font-display font-bold text-xl text-slate-900" data-i18n="tab_profile">Citizen Profile</h2>
+                <button onclick="window.location.href='new_new_index.html'" class="md:hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs transition-all shadow-sm border border-slate-200 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">dashboard</span> <span data-i18n="btn_dash">Dash</span>
+                </button>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-6 max-w-xl mx-auto items-center mt-4">
+                <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-100 border-[6px] border-white shadow-lg flex items-center justify-center overflow-hidden relative group cursor-pointer">
+                    <span class="material-symbols-outlined text-6xl text-slate-300 group-hover:scale-110 transition-transform">person</span>
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="material-symbols-outlined text-white">edit</span>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-bold text-xl sm:text-2xl text-slate-900" data-i18n="prof_name">Registered Citizen</h3>
+                    <p class="text-xs sm:text-sm text-slate-500 font-mono mt-1 bg-slate-200/50 px-3 py-1 rounded-full border border-slate-200" data-i18n="prof_uid">UID: 9448-SYNC-2026</p>
+                </div>
+ 
+                <div class="w-full bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mt-4">
+                    
+                    <div onclick="verifyIdentity()" class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined">account_balance_wallet</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-bold text-slate-800 block" data-i18n="prof_id_title">Digital Identity Linked</span>
+                                <span class="text-[10px] text-slate-500 block" id="id-status" data-i18n="prof_id_sub">Verified via National Portal</span>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-emerald-500 text-[20px]" id="id-icon">check_circle</span>
+                    </div>
+                    
+                    <div onclick="toggleSMSAlerts()" class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined">notifications</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-bold text-slate-800 block" data-i18n="prof_sms_title">Statutory SMS Alerts</span>
+                                <span class="text-[10px] text-slate-500 block" data-i18n="prof_sms_sub">Updates on work orders</span>
+                            </div>
+                        </div>
+                        <div id="sms-toggle" class="w-10 h-5 bg-sky-600 rounded-full relative shadow-inner transition-colors">
+                            <div id="sms-knob" class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform"></div>
+                        </div>
+                    </div>
+ 
+                    <div onclick="showGuidelines()" class="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined">gavel</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-bold text-slate-800 block" data-i18n="prof_guide_title">Civic Guidelines</span>
+                                <span class="text-[10px] text-slate-500 block" data-i18n="prof_guide_sub">Terms of Service & Rules</span>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+                    </div>
+ 
+                    <div class="p-4 sm:p-5 flex justify-between items-center hover:bg-rose-50 cursor-pointer transition-colors text-rose-600" onclick="window.location.replace('login.html')">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined">logout</span>
+                            </div>
+                            <span class="text-sm font-bold" data-i18n="prof_logout">Sign Out of Device</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+ 
+ 
+    <!-- ========================================== -->
+    <!-- WIZARD: REPORT MODAL -->
+    <!-- ========================================== -->
+    <div id="report-wizard" class="fixed inset-0 z-[200] transform translate-y-full transition-transform duration-400 ease-out flex flex-col md:items-center md:justify-center md:bg-slate-900/70 md:backdrop-blur-sm hidden-until-open">
+        
+        <div class="bg-white w-full h-full md:h-auto md:max-h-[85vh] md:w-[500px] md:rounded-3xl flex flex-col overflow-hidden shadow-2xl relative">
+            
+            <div class="h-16 flex items-center justify-between px-5 border-b border-slate-200 shrink-0 bg-white z-20">
+                <button onclick="closeReportWizard()" class="w-10 h-10 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                <span class="font-display font-bold text-base text-slate-900 uppercase tracking-wide" id="wizard-title" data-i18n="wiz_title">New Report</span>
+                <div class="w-10"></div>
+            </div>
+ 
+            <!-- Step 1: Category & Location -->
+            <div id="wizard-step-1" class="flex-grow flex flex-col p-6 overflow-y-auto bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-900 mb-4" data-i18n="wiz_q1">What is the issue?</h3>
+                
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div id="cat-water" class="border-2 border-slate-200 bg-white rounded-2xl p-4 flex flex-col items-center gap-2 cursor-pointer transition-all">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 cat-icon-wrapper transition-colors"><span class="material-symbols-outlined text-[20px]">water_drop</span></div>
+                        <span class="text-xs font-bold text-slate-700 text-center" data-i18n="app_cat_water_txt">Water & Drain</span>
+                    </div>
+                    <div id="cat-road" class="border-2 border-slate-200 bg-white rounded-2xl p-4 flex flex-col items-center gap-2 cursor-pointer transition-all">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 cat-icon-wrapper transition-colors"><span class="material-symbols-outlined text-[20px]">add_road</span></div>
+                        <span class="text-xs font-bold text-slate-700 text-center" data-i18n="app_cat_road_txt">Roads & Bridge</span>
+                    </div>
+                    <div id="cat-power" class="border-2 border-slate-200 bg-white rounded-2xl p-4 flex flex-col items-center gap-2 cursor-pointer transition-all">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 cat-icon-wrapper transition-colors"><span class="material-symbols-outlined text-[20px]">bolt</span></div>
+                        <span class="text-xs font-bold text-slate-700 text-center" data-i18n="app_cat_power_txt">Power Grid</span>
+                    </div>
+                    <div id="cat-waste" class="border-2 border-slate-200 bg-white rounded-2xl p-4 flex flex-col items-center gap-2 cursor-pointer transition-all">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 cat-icon-wrapper transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></div>
+                        <span class="text-xs font-bold text-slate-700 text-center" data-i18n="app_cat_waste_txt">Sanitation</span>
+                    </div>
+                </div>
+ 
+                <h3 class="font-bold text-lg text-slate-900 mb-4" data-i18n="wiz_q2">Where is it located?</h3>
+                <div class="bg-white border-2 border-slate-200 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-sky-400 transition-all" onclick="simulateGPSWizard()">
+                    <div class="w-10 h-10 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">my_location</span>
+                    </div>
+                    <div class="flex-grow">
+                        <span class="text-sm font-bold text-slate-800 block mb-0.5" id="location-text-wiz" data-i18n="wiz_loc_fetch">Fetch Current Location</span>
+                        <span class="text-[10px] text-slate-500 font-mono" id="location-sub-wiz" data-i18n="wiz_loc_sub">Requires GPS permission</span>
+                    </div>
+                </div>
+                
+                <div class="mt-auto pt-8">
+                    <button onclick="nextWizardStep(2)" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-[0_10px_20px_rgba(15,23,42,0.3)] active:scale-95 transition-all text-sm uppercase tracking-widest" data-i18n="btn_next">Continue to Evidence</button>
+                </div>
+            </div>
+ 
+            <!-- Step 2: Evidence Collection (Camera / Voice) -->
+            <div id="wizard-step-2" class="flex-grow flex flex-col hidden overflow-hidden relative bg-black">
+                <div class="absolute inset-0 z-0 flex items-center justify-center bg-slate-900">
+                    <span class="material-symbols-outlined text-white/20 text-6xl animate-pulse">photo_camera</span>
+                    <video id="camera-feed" class="absolute inset-0 w-full h-full object-cover hidden" autoplay playsinline muted></video>
+                    <!-- Hidden file input for gallery -->
+                    <input type="file" id="hidden-file-input" accept="image/*" class="hidden" onchange="handleSimulatedUpload(event)">
+                </div>
+ 
+                <div class="relative z-10 flex flex-col h-full justify-between pb-6 pt-4 px-4 bg-gradient-to-b from-black/60 via-transparent to-black/90">
+                    <div class="flex justify-between items-center">
+                        <button onclick="nextWizardStep(1)" class="w-10 h-10 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center hover:bg-white/30 transition-colors">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                        </button>
+                        <span class="bg-black/50 px-4 py-1.5 rounded-full text-[10px] font-mono text-white border border-white/20" data-i18n="wiz_evidence">Evidence Collection</span>
+                        <div class="w-10"></div>
+                    </div>
+ 
+                    <div class="flex flex-col items-center gap-5 w-full max-w-sm mx-auto">
+                        <!-- Voice Box -->
+                        <div class="w-full bg-black/50 backdrop-blur-md border border-white/20 rounded-3xl p-4">
+                            <div class="flex items-center gap-3">
+                                <button onclick="toggleVoiceRecord()" id="btn-mic" class="w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(225,29,72,0.6)] transition-all">
+                                    <span class="material-symbols-outlined" id="mic-icon">mic</span>
+                                </button>
+                                <textarea id="voice-text" class="bg-transparent text-white font-medium text-sm w-full outline-none resize-none h-12 placeholder:text-white/60 pt-1" readonly></textarea>
+                            </div>
+                        </div>
+ 
+                        <!-- Shutter -->
+                        <div class="flex items-center justify-center gap-8 mb-6">
+                            <button onclick="simulateGalleryUpload()" class="text-white p-2 hover:bg-white/10 rounded-full transition-colors" title="Gallery"><span class="material-symbols-outlined text-[28px]">image</span></button>
+                            
+                            <button onclick="simulatePhotoCapture()" id="btn-shutter" class="w-16 h-16 rounded-full border-[4px] border-white p-1 active:scale-90 transition-transform hover:bg-white/10">
+                                <div class="w-full h-full bg-white rounded-full"></div>
+                            </button>
+                            
+                            <button onclick="simulateCameraFlip()" class="text-white p-2 hover:bg-white/10 rounded-full transition-colors" title="Flip Camera"><span class="material-symbols-outlined text-[28px]">flip_camera_ios</span></button>
+                        </div>
+ 
+                        <button onclick="submitGrievance()" id="btn-submit-report" class="w-full bg-sky-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all transform translate-y-24 opacity-0 absolute bottom-6 left-0 right-0 mx-4 max-w-[calc(100%-32px)] uppercase tracking-widest text-sm" data-i18n="btn_submit">Submit Report</button>
+                    </div>
+                </div>
+            </div>
+ 
+            <!-- Step 3: Success Screen -->
+            <div id="wizard-step-3" class="flex-grow flex flex-col items-center justify-center p-8 hidden bg-slate-50 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-100 via-slate-50 to-slate-50 opacity-70"></div>
+                
+                <div class="relative z-10 flex flex-col items-center w-full">
+                    <div class="w-28 h-28 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-500 mb-8 scale-0 border-4 border-white shadow-xl" id="success-icon">
+                        <span class="material-symbols-outlined text-[56px]">done_all</span>
+                    </div>
+                    <h2 class="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2" data-i18n="succ_title">Report Logged</h2>
+                    <p class="text-sm text-slate-600 mb-10 max-w-[280px] leading-relaxed" data-i18n="succ_sub">Your data has been securely transmitted to the Municipal DPI Ledger.</p>
+                    
+                    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl w-full p-5 text-left mb-10">
+                        <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-1.5" data-i18n="succ_track">Official Tracking ID</span>
+                        <strong class="font-mono text-slate-800 text-xl tracking-tight" id="generated-id">WO-2026-0000</strong>
+                        <div class="w-full h-px bg-slate-100 my-3"></div>
+                        <span class="text-emerald-600 text-[11px] font-bold flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px]">shield</span> <span data-i18n="succ_prio">Level 2 Priority Routing</span></span>
+                    </div>
+ 
+                    <button onclick="closeReportWizard()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-sm uppercase tracking-widest" data-i18n="btn_done">Return to Dashboard</button>
+                </div>
+            </div>
+ 
+        </div>
+    </div>
+ 
+    <!-- ========================================== -->
+    <!-- REPORT DETAIL MODAL (view a submitted report) -->
+    <!-- ========================================== -->
+    <div id="report-detail" class="fixed inset-0 z-[300] hidden items-end md:items-center justify-center bg-slate-900/70 backdrop-blur-sm" onclick="if(event.target===this) closeReportDetail()">
+        <div class="bg-white w-full md:w-[520px] max-h-[92vh] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+            <div class="h-14 flex items-center justify-between px-5 border-b border-slate-200 shrink-0">
+                <span class="font-display font-bold text-base text-slate-900 uppercase tracking-wide" id="detail-heading">Report Details</span>
+                <button onclick="closeReportDetail()" class="w-9 h-9 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="detail-body" class="p-5 overflow-y-auto flex flex-col gap-4"></div>
+        </div>
+    </div>
+ 
+    <!-- ========================================== -->
+    <!-- BOTTOM NAVIGATION BAR (Mobile Only) -->
+    <!-- ========================================== -->
+    <nav class="md:hidden bg-white border-t border-slate-200 h-[72px] flex justify-between items-center pb-safe z-30 shrink-0 relative px-2 w-full">
+        <div class="nav-item active" onclick="switchTab('home', this)">
+            <span class="material-symbols-outlined">space_dashboard</span>
+            <span class="text-[10px] font-semibold mt-1" data-i18n="nav_home">Home</span>
+        </div>
+        
+        <div class="nav-item" onclick="switchTab('activity', this)">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <span class="text-[10px] font-semibold mt-1" data-i18n="tab_activity">Activity</span>
+        </div>
+ 
+        <div class="w-[20%]"></div>
+        
+        <div class="nav-item" onclick="switchTab('profile', this)">
+            <span class="material-symbols-outlined">account_circle</span>
+            <span class="text-[10px] font-semibold mt-1" data-i18n="tab_profile">Profile</span>
+        </div>
+    </nav>
+ 
+    <!-- FAB safely positioned outside the flex flow -->
+    <div class="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[60]">
+        <button onclick="openReportWizard()" class="w-[60px] h-[60px] bg-gradient-to-tr from-sky-600 to-sky-400 rounded-full shadow-[0_10px_20px_rgba(2,132,199,0.5)] border-[4px] border-white flex items-center justify-center text-white active:scale-95 transition-transform">
+            <span class="material-symbols-outlined text-[32px]">add</span>
+        </button>
+    </div>
+ 
+    <!-- MultiLingual Engine, App Logic & Expanded Data -->
+    <script>
+        // --- 1. EXHAUSTIVE TRANSLATION DICTIONARY ---
+        const translations = {
+            en: {
+                hdr_title: "Public Works", hdr_sub: "National Statutory Command",
+                nav_home: "Home", tab_activity: "My Reports", tab_profile: "Citizen Profile", btn_dash: "Dashboard",
+                app_trust: "CIVIC TRUST RATING", app_trust_sub: "Your verified reports are granted Level 2 Priority routing by the Municipal Authority, bypassing initial screening protocols.",
+                app_quick: "Report Infrastructure Anomaly", app_nearby: "Infrastructure Near You", app_view_all: "View Map",
+                app_active_works: "3 Active Works", app_radius: "Within 2km radius of your location",
+                app_updates: "Municipal Updates",
+                app_cat_water: "Water &<br>Drainage", app_cat_road: "Roads &<br>Transit", app_cat_power: "Power<br>Grid", app_cat_waste: "Public<br>Sanitation",
+                app_cat_water_txt: "Water & Drain", app_cat_road_txt: "Roads & Bridge", app_cat_power_txt: "Power Grid", app_cat_waste_txt: "Sanitation",
+                wiz_title: "New Report", wiz_q1: "What is the issue?", wiz_q2: "Where is it located?",
+                wiz_loc_fetch: "Fetch Current Location", wiz_loc_sub: "Requires GPS permission", wiz_loc_done: "Sector 14, Main Arterial Road", wiz_loc_acc: "Lat: 28.6139, Lng: 77.2090 • Accuracy: 4m",
+                wiz_evidence: "Evidence Collection",
+                mic_placeholder: "Tap mic to dictate the problem...", mic_listening: "Listening...", mic_text_1: "There is a massive ", mic_text_2: "There is a massive rupture in the central water line.",
+                mic_unsupported: "Speech recognition is not supported in this browser. Please use Chrome, Edge or Safari.",
+                mic_denied: "Microphone permission denied. Please allow mic access.",
+                mic_nospeech: "No speech detected. Tap the mic and try again.",
+                mic_error: "Voice input error. Please try again.",
+                btn_next: "Continue to Evidence", btn_submit: "Submit Statutory Report", btn_done: "Return to Dashboard",
+                succ_title: "Report Logged", succ_sub: "Your data has been verified and securely transmitted to the Municipal DPI Ledger.",
+                succ_track: "Official Tracking ID", succ_prio: "Level 2 Priority Routing",
+                stat_evaluating: "EVALUATING", stat_processing: "Sanction Pending", stat_resolved: "Resolved", stat_progress: "In Progress",
+                time_yest: "Yesterday", time_2h: "2 hours ago", time_now: "Just Now",
+                upd_title_1: "Pothole Repair Complete", upd_desc_1: "Public Works Dept has completed surface milling and patching at Vasant Kunj Sector C.",
+                upd_title_2: "Water Main Excavation", upd_desc_2: "Delhi Jal Board has initiated excavation protocols for pipe replacement in Ward 14.",
+                prof_name: "Registered Citizen", prof_uid: "UID: 9448-SYNC-2026",
+                prof_id_title: "Digital Identity Linked", prof_id_sub: "Verified via National Portal",
+                prof_sms_title: "Statutory SMS Alerts", prof_sms_sub: "Updates on work orders",
+                prof_guide_title: "Civic Guidelines", prof_guide_sub: "Terms of Service & Rules",
+                prof_logout: "Sign Out of Device",
+                trk_sub: "Submitted", trk_ver: "Verified", trk_san: "Sanctioned", trk_res: "Resolved",
+                rep_water: "Water Line Rupture", rep_road: "Surface Degradation", rep_power: "Grid Fault", rep_waste: "Sanitation Hazard",
+                det_heading: "Report Details", det_id: "Tracking ID", det_cat: "Category", det_status: "Current Status", det_time: "Submitted On",
+                det_loc: "Location", det_desc: "Description", det_photo: "Photo Evidence", det_no_desc: "No description provided.", det_no_photo: "No photo attached.",
+                empty_reports: "You have not submitted any reports yet."
+            },
+            hi: {
+                hdr_title: "सार्वजनिक निर्माण", hdr_sub: "राष्ट्रीय वैधानिक कमान",
+                nav_home: "होम", tab_activity: "मेरी रिपोर्ट", tab_profile: "नागरिक प्रोफ़ाइल", btn_dash: "डैशबोर्ड",
+                app_trust: "नागरिक विश्वास रेटिंग", app_trust_sub: "आपकी सत्यापित रिपोर्टों को नगर पालिका द्वारा स्तर 2 प्राथमिकता दी गई है, जो प्रारंभिक जांच को बायपास करती है।",
+                app_quick: "बुनियादी ढांचे की विसंगति की रिपोर्ट करें", app_nearby: "आपके आस-पास का बुनियादी ढांचा", app_view_all: "मानचित्र देखें",
+                app_active_works: "3 सक्रिय कार्य", app_radius: "आपके स्थान के 2 किमी के दायरे में",
+                app_updates: "नगरपालिका अपडेट",
+                app_cat_water: "जल एवं<br>निकासी", app_cat_road: "सड़कें एवं<br>यातायात", app_cat_power: "पावर<br>ग्रिड", app_cat_waste: "सार्वजनिक<br>स्वच्छता",
+                app_cat_water_txt: "जल एवं निकासी", app_cat_road_txt: "सड़कें एवं पुल", app_cat_power_txt: "पावर ग्रिड", app_cat_waste_txt: "स्वच्छता",
+                wiz_title: "नई रिपोर्ट", wiz_q1: "क्या समस्या है?", wiz_q2: "यह कहाँ स्थित है?",
+                wiz_loc_fetch: "वर्तमान स्थान प्राप्त करें", wiz_loc_sub: "GPS अनुमति की आवश्यकता है", wiz_loc_done: "सेक्टर 14, मुख्य धमनी सड़क", wiz_loc_acc: "Lat: 28.6139, Lng: 77.2090 • सटीकता: 4m",
+                wiz_evidence: "साक्ष्य संग्रह",
+                mic_placeholder: "समस्या बताने के लिए माइक टैप करें...", mic_listening: "सुन रहा हूँ...", mic_text_1: "केंद्रीय जल लाइन में ", mic_text_2: "केंद्रीय जल लाइन में भारी टूट-फूट है।",
+                mic_unsupported: "इस ब्राउज़र में वॉइस पहचान समर्थित नहीं है। कृपया Chrome, Edge या Safari का उपयोग करें।",
+                mic_denied: "माइक्रोफ़ोन की अनुमति अस्वीकृत। कृपया अनुमति दें।",
+                mic_nospeech: "कोई आवाज़ नहीं मिली। माइक टैप करके पुनः प्रयास करें।",
+                mic_error: "वॉइस इनपुट त्रुटि। कृपया पुनः प्रयास करें।",
+                btn_next: "साक्ष्य के लिए जारी रखें", btn_submit: "वैधानिक रिपोर्ट सबमिट करें", btn_done: "डैशबोर्ड पर वापस जाएं",
+                succ_title: "रिपोर्ट लॉग की गई", succ_sub: "आपका डेटा सत्यापित किया गया है और सुरक्षित रूप से नगर निगम DPI लेजर में प्रेषित किया गया है।",
+                succ_track: "आधिकारिक ट्रैकिंग आईडी", succ_prio: "स्तर 2 प्राथमिकता राउटिंग",
+                stat_evaluating: "मूल्यांकन", stat_processing: "स्वीकृति लंबित", stat_resolved: "हल हो गया", stat_progress: "प्रगति पर",
+                time_yest: "कल", time_2h: "2 घंटे पहले", time_now: "अभी-अभी",
+                upd_title_1: "गड्ढे की मरम्मत पूरी", upd_desc_1: "लोक निर्माण विभाग ने वसंत कुंज सेक्टर सी में सतह मिलिंग और पैचिंग पूरी कर ली है।",
+                upd_title_2: "जल मुख्य खुदाई", upd_desc_2: "दिल्ली जल बोर्ड ने वार्ड 14 में पाइप बदलने के लिए खुदाई प्रोटोकॉल शुरू किया है।",
+                prof_name: "पंजीकृत नागरिक", prof_uid: "यूआईडी: 9448-SYNC-2026",
+                prof_id_title: "डिजिटल पहचान लिंक", prof_id_sub: "राष्ट्रीय पोर्टल के माध्यम से सत्यापित",
+                prof_sms_title: "वैधानिक एसएमएस अलर्ट", prof_sms_sub: "कार्य आदेशों पर अपडेट",
+                prof_guide_title: "नागरिक दिशानिर्देश", prof_guide_sub: "सेवा की शर्तें और नियम",
+                prof_logout: "डिवाइस से साइन आउट करें",
+                trk_sub: "प्रस्तुत", trk_ver: "सत्यापित", trk_san: "स्वीकृत", trk_res: "हल",
+                rep_water: "जल रेखा टूटना", rep_road: "सतह क्षरण", rep_power: "ग्रिड दोष", rep_waste: "स्वच्छता खतरा",
+                det_heading: "रिपोर्ट विवरण", det_id: "ट्रैकिंग आईडी", det_cat: "श्रेणी", det_status: "वर्तमान स्थिति", det_time: "प्रस्तुत करने का समय",
+                det_loc: "स्थान", det_desc: "विवरण", det_photo: "फ़ोटो साक्ष्य", det_no_desc: "कोई विवरण नहीं दिया गया।", det_no_photo: "कोई फ़ोटो संलग्न नहीं।",
+                empty_reports: "आपने अभी तक कोई रिपोर्ट सबमिट नहीं की है।"
+            },
+            zh: {
+                hdr_title: "公共工程", hdr_sub: "国家法定指挥部",
+                nav_home: "首页", tab_activity: "我的报告", tab_profile: "公民档案", btn_dash: "仪表板",
+                app_trust: "公民信用评级", app_trust_sub: "您的已验证报告被市政当局授予二级优先路由，绕过初始筛查协议。",
+                app_quick: "报告基础设施异常", app_nearby: "您附近的基础设施", app_view_all: "查看地图",
+                app_active_works: "3 项进行中的工程", app_radius: "在您位置的2公里范围内",
+                app_updates: "市政动态",
+                app_cat_water: "供水与<br>排水", app_cat_road: "道路与<br>交通", app_cat_power: "电网<br>设施", app_cat_waste: "公共<br>卫生",
+                app_cat_water_txt: "供水与排水", app_cat_road_txt: "道路与桥梁", app_cat_power_txt: "电网设施", app_cat_waste_txt: "公共卫生",
+                wiz_title: "新建报告", wiz_q1: "问题类型？", wiz_q2: "具体位置？",
+                wiz_loc_fetch: "获取当前位置", wiz_loc_sub: "需要 GPS 权限", wiz_loc_done: "14区主干道", wiz_loc_acc: "Lat: 28.6139, Lng: 77.2090 • 精度: 4m",
+                wiz_evidence: "证据收集",
+                mic_placeholder: "点击麦克风口述问题...", mic_listening: "聆听中...", mic_text_1: "中央水管发生了 ", mic_text_2: "中央水管发生了严重的破裂。",
+                mic_unsupported: "此浏览器不支持语音识别。请使用 Chrome、Edge 或 Safari。",
+                mic_denied: "麦克风权限被拒绝，请允许访问麦克风。",
+                mic_nospeech: "未检测到语音。请点击麦克风重试。",
+                mic_error: "语音输入错误，请重试。",
+                btn_next: "继续提供证据", btn_submit: "提交法定报告", btn_done: "返回控制台",
+                succ_title: "报告已记录", succ_sub: "您的数据已验证并安全传输至市政数字公共基础设施分类账。",
+                succ_track: "官方追踪 ID", succ_prio: "二级优先路由",
+                stat_evaluating: "评估中", stat_processing: "审批中", stat_resolved: "已解决", stat_progress: "处理中",
+                time_yest: "昨天", time_2h: "2小时前", time_now: "刚刚",
+                upd_title_1: "坑洼修复完成", upd_desc_1: "公共工程部已完成 Vasant Kunj C 区的表面铣刨和修补。",
+                upd_title_2: "主水管挖掘", upd_desc_2: "德里水务局已启动 14 区管道更换的挖掘协议。",
+                prof_name: "注册公民", prof_uid: "UID: 9448-SYNC-2026",
+                prof_id_title: "数字身份已链接", prof_id_sub: "通过国家门户网站验证",
+                prof_sms_title: "法定短信提醒", prof_sms_sub: "工单更新",
+                prof_guide_title: "公民指南", prof_guide_sub: "服务条款与规则",
+                prof_logout: "退出设备",
+                trk_sub: "已提交", trk_ver: "已验证", trk_san: "已批准", trk_res: "已解决",
+                rep_water: "水管破裂", rep_road: "路面退化", rep_power: "电网故障", rep_waste: "卫生危害",
+                det_heading: "报告详情", det_id: "追踪编号", det_cat: "类别", det_status: "当前状态", det_time: "提交时间",
+                det_loc: "位置", det_desc: "描述", det_photo: "照片证据", det_no_desc: "未提供描述。", det_no_photo: "未附照片。",
+                empty_reports: "您还没有提交任何报告。"
+            },
+            pt: {
+                hdr_title: "Obras Públicas", hdr_sub: "Comando Estatutário Nacional",
+                nav_home: "Início", tab_activity: "Meus Relatórios", tab_profile: "Perfil do Cidadão", btn_dash: "Painel",
+                app_trust: "CLASSIFICAÇÃO CÍVICA", app_trust_sub: "Seus relatórios verificados recebem roteamento de Prioridade Nível 2 pela Autoridade Municipal.",
+                app_quick: "Relatar Anomalia", app_nearby: "Infraestrutura Próxima", app_view_all: "Ver Mapa",
+                app_active_works: "3 Obras Ativas", app_radius: "No raio de 2km",
+                app_updates: "Atualizações Municipais",
+                app_cat_water: "Água &<br>Esgoto", app_cat_road: "Rodovias &<br>Trânsito", app_cat_power: "Rede<br>Elétrica", app_cat_waste: "Saneamento<br>Público",
+                app_cat_water_txt: "Água & Esgoto", app_cat_road_txt: "Rodovias & Pontes", app_cat_power_txt: "Rede Elétrica", app_cat_waste_txt: "Saneamento",
+                wiz_title: "Novo Relatório", wiz_q1: "Qual é o problema?", wiz_q2: "Onde está localizado?",
+                wiz_loc_fetch: "Obter Localização Atual", wiz_loc_sub: "Requer permissão de GPS", wiz_loc_done: "Setor 14, Via Arterial Principal", wiz_loc_acc: "Lat: 28.6139, Lng: 77.2090 • Prec: 4m",
+                wiz_evidence: "Coleta de Evidências",
+                mic_placeholder: "Toque no microfone para ditar...", mic_listening: "Ouvindo...", mic_text_1: "Há uma grande ", mic_text_2: "Há uma grande ruptura na linha central de água.",
+                mic_unsupported: "Reconhecimento de voz não suportado neste navegador. Use Chrome, Edge ou Safari.",
+                mic_denied: "Permissão do microfone negada. Permita o acesso ao microfone.",
+                mic_nospeech: "Nenhuma fala detectada. Toque no microfone e tente novamente.",
+                mic_error: "Erro na entrada de voz. Tente novamente.",
+                btn_next: "Continuar para Evidência", btn_submit: "Enviar Relatório Estatutário", btn_done: "Retornar ao Painel",
+                succ_title: "Relatório Registrado", succ_sub: "Seus dados foram verificados e transmitidos com segurança para o Livro-Razão DPI.",
+                succ_track: "ID de Rastreamento Oficial", succ_prio: "Roteamento Prioridade Nível 2",
+                stat_evaluating: "AVALIANDO", stat_processing: "Aprovação Pendente", stat_resolved: "Resolvido", stat_progress: "Em Progresso",
+                time_yest: "Ontem", time_2h: "2 horas atrás", time_now: "Agora mesmo",
+                upd_title_1: "Reparo de Buraco Concluído", upd_desc_1: "Departamento de Obras Públicas concluiu fresagem.",
+                upd_title_2: "Escavação da Adutora", upd_desc_2: "Iniciados protocolos de escavação para substituição.",
+                prof_name: "Cidadão Registrado", prof_uid: "UID: 9448-SYNC-2026",
+                prof_id_title: "Identidade Digital", prof_id_sub: "Verificado via Portal Nacional",
+                prof_sms_title: "Alertas SMS Estatutários", prof_sms_sub: "Atualizações de ordens",
+                prof_guide_title: "Diretrizes Cívicas", prof_guide_sub: "Termos de Serviço",
+                prof_logout: "Sair do Dispositivo",
+                trk_sub: "Enviado", trk_ver: "Verificado", trk_san: "Sancionado", trk_res: "Resolvido",
+                rep_water: "Ruptura de Água", rep_road: "Degradação Viária", rep_power: "Falha na Rede", rep_waste: "Risco Sanitário",
+                det_heading: "Detalhes do Relatório", det_id: "ID de Rastreamento", det_cat: "Categoria", det_status: "Status Atual", det_time: "Enviado em",
+                det_loc: "Localização", det_desc: "Descrição", det_photo: "Foto de Evidência", det_no_desc: "Nenhuma descrição fornecida.", det_no_photo: "Nenhuma foto anexada.",
+                empty_reports: "Você ainda não enviou nenhum relatório."
+            },
+            ru: {
+                hdr_title: "Общественные работы", hdr_sub: "Национальное управление",
+                nav_home: "Главная", tab_activity: "Мои обращения", tab_profile: "Профиль", btn_dash: "Панель",
+                app_trust: "РЕЙТИНГ ДОВЕРИЯ", app_trust_sub: "Вашим проверенным отчетам муниципалитет присваивает 2 уровень приоритета.",
+                app_quick: "Сообщить об аномалии", app_nearby: "Инфраструктура рядом", app_view_all: "На карте",
+                app_active_works: "3 активных объекта", app_radius: "В радиусе 2 км",
+                app_updates: "Новости муниципалитета",
+                app_cat_water: "Вода<br>и слив", app_cat_road: "Дороги<br>и транспорт", app_cat_power: "Энергосеть", app_cat_waste: "Санитария",
+                app_cat_water_txt: "Водоснабжение", app_cat_road_txt: "Дороги и мосты", app_cat_power_txt: "Энергосеть", app_cat_waste_txt: "Санитария",
+                wiz_title: "Новое обращение", wiz_q1: "В чем проблема?", wiz_q2: "Где это находится?",
+                wiz_loc_fetch: "Определить местоположение", wiz_loc_sub: "Требуется GPS", wiz_loc_done: "Сектор 14, Главная магистраль", wiz_loc_acc: "Lat: 28.6139, Lng: 77.2090 • Точность: 4м",
+                wiz_evidence: "Сбор данных",
+                mic_placeholder: "Нажмите для записи...", mic_listening: "Слушаю...", mic_text_1: "Произошел сильный ", mic_text_2: "Произошел сильный прорыв центрального водопровода.",
+                mic_unsupported: "Распознавание речи не поддерживается в этом браузере. Используйте Chrome, Edge или Safari.",
+                mic_denied: "Доступ к микрофону запрещен. Разрешите доступ.",
+                mic_nospeech: "Речь не обнаружена. Нажмите на микрофон и повторите.",
+                mic_error: "Ошибка голосового ввода. Повторите попытку.",
+                btn_next: "Далее (Сбор данных)", btn_submit: "Отправить офиц. отчет", btn_done: "На главную",
+                succ_title: "Отчет зарегистрирован", succ_sub: "Ваши данные проверены и безопасно переданы в муниципальную систему.",
+                succ_track: "Официальный ID", succ_prio: "2 уровень приоритета",
+                stat_evaluating: "ОЦЕНКА", stat_processing: "Ожидает санкции", stat_resolved: "Решено", stat_progress: "В процессе",
+                time_yest: "Вчера", time_2h: "2 часа назад", time_now: "Только что",
+                upd_title_1: "Ремонт ям завершен", upd_desc_1: "Завершено фрезерование и ямочный ремонт.",
+                upd_title_2: "Раскопки водопровода", upd_desc_2: "Начат протокол раскопок для замены труб.",
+                prof_name: "Зарегистрированный гражданин", prof_uid: "UID: 9448-SYNC-2026",
+                prof_id_title: "Цифровой профиль", prof_id_sub: "Подтверждено (Госуслуги)",
+                prof_sms_title: "SMS уведомления", prof_sms_sub: "Статусы заявок",
+                prof_guide_title: "Правила сервиса", prof_guide_sub: "Пользовательское соглашение",
+                prof_logout: "Выйти из аккаунта",
+                trk_sub: "Отправлено", trk_ver: "Проверено", trk_san: "Утверждено", trk_res: "Решено",
+                rep_water: "Прорыв трубы", rep_road: "Ямы на дороге", rep_power: "Сбой электросети", rep_waste: "Мусорная свалка",
+                det_heading: "Детали обращения", det_id: "ID отслеживания", det_cat: "Категория", det_status: "Текущий статус", det_time: "Отправлено",
+                det_loc: "Местоположение", det_desc: "Описание", det_photo: "Фото-доказательство", det_no_desc: "Описание не указано.", det_no_photo: "Фото не приложено.",
+                empty_reports: "Вы еще не отправляли обращений."
+            }
+        };
+ 
+        let currentAppLang = localStorage.getItem('syncpolis_citizen_lang') || 'en';
+ 
+        // Translation helper with English fallback
+        function t(key) {
+            const d = translations[currentAppLang] || translations['en'];
+            return d[key] || translations['en'][key] || key;
+        }
+ 
+        // Escape user-provided text before injecting into HTML
+        function esc(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+ 
+        // Initialize dictionary application
+        function applyTranslations(lang) {
+            const dict = translations[lang] || translations['en'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) el.innerHTML = dict[key];
+            });
+            // Update inputs placeholders
+            const micInput = document.getElementById('voice-text');
+            if(micInput && !isMicActive) micInput.placeholder = dict.mic_placeholder || translations['en'].mic_placeholder;
+        }
+ 
+        function toggleLangMenu() {
+            const menu = document.getElementById('lang-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('flex');
+        }
+ 
+        function switchAppLang(lang) {
+            currentAppLang = lang;
+            localStorage.setItem('syncpolis_citizen_lang', lang);
+            const menu = document.getElementById('lang-menu');
+            if(menu && !menu.classList.contains('hidden')) toggleLangMenu();
+            applyTranslations(lang);
+            // Re-render history list in new language
+            renderHistoricalActivity();
+            // Re-render open detail view (if any) in new language
+            if(currentDetailId) openReportDetail(currentDetailId);
+        }
+ 
+        // --- 2. Tab Navigation ---
+        function switchTab(tabId, elem) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(elem && elem.classList.contains('nav-item')) elem.classList.add('active');
+ 
+            document.querySelectorAll('.desktop-nav-item').forEach(el => {
+                el.classList.remove('text-sky-600', 'border-sky-600');
+                el.classList.add('text-slate-500', 'border-transparent');
+            });
+            
+            const deskItems = document.querySelectorAll('.desktop-nav-item');
+            if(tabId === 'home') { deskItems[0].classList.add('text-sky-600', 'border-sky-600'); deskItems[0].classList.remove('text-slate-500'); }
+            if(tabId === 'activity') { deskItems[1].classList.add('text-sky-600', 'border-sky-600'); deskItems[1].classList.remove('text-slate-500'); }
+            if(tabId === 'profile') { deskItems[2].classList.add('text-sky-600', 'border-sky-600'); deskItems[2].classList.remove('text-slate-500'); }
+ 
+            if(tabId === 'home' && miniMap) setTimeout(() => miniMap.invalidateSize(), 50);
+            if(tabId === 'activity') renderHistoricalActivity();
+        }
+ 
+        // --- 3. Profile Toggles & Alerts ---
+        let smsEnabled = true;
+        function toggleSMSAlerts() {
+            smsEnabled = !smsEnabled;
+            const knob = document.getElementById('sms-knob');
+            const bg = document.getElementById('sms-toggle');
+            if(smsEnabled) {
+                bg.classList.remove('bg-slate-300'); bg.classList.add('bg-sky-600');
+                knob.style.transform = 'translateX(0)';
+            } else {
+                bg.classList.remove('bg-sky-600'); bg.classList.add('bg-slate-300');
+                knob.style.transform = 'translateX(-20px)';
+            }
+        }
+        function verifyIdentity() { alert("Your digital identity is already verified and cryptographically secured in the National Portal."); }
+        function showGuidelines() { alert("Loading Municipal Civic Guidelines & Statutory Bylaws..."); }
+ 
+        // --- 4. Wizard & Multimodal Capture Logic ---
+        let selectedCategory = null;
+        let selectedLocation = null;
+        let selectedCoords = null;      // { lat, lng } of the report
+        let capturedPhoto = null;       // data URL of the evidence photo
+        let voiceTranscript = '';       // final recognised text for this report
+        let cameraStream = null;
+        let isMicActive = false;
+        let recognition = null;
+ 
+        function showSubmitButton() {
+            const submitBtn = document.getElementById('btn-submit-report');
+            submitBtn.classList.remove('hidden', 'translate-y-24', 'opacity-0');
+            submitBtn.classList.add('translate-y-0', 'opacity-100');
+        }
+ 
+        function stopRecognition(abort) {
+            if(recognition) {
+                try { abort ? recognition.abort() : recognition.stop(); } catch(e) {}
+            }
+        }
+ 
+        function openReportWizard(cat = null) {
+            const wizard = document.getElementById('report-wizard');
+            wizard.classList.remove('hidden-until-open');
+            setTimeout(() => {
+                wizard.classList.remove('translate-y-full', 'opacity-0');
+            }, 10);
+            
+            document.getElementById('wizard-step-1').classList.remove('hidden');
+            document.getElementById('wizard-step-2').classList.add('hidden');
+            document.getElementById('wizard-step-3').classList.add('hidden');
+            
+            // Reset Category UI
+            document.querySelectorAll('[id^="cat-"]').forEach(el => {
+                el.classList.remove('border-sky-500', 'bg-sky-50');
+                el.classList.add('border-slate-200');
+                el.querySelector('.cat-icon-wrapper').classList.remove('bg-sky-100', 'text-sky-600');
+                el.querySelector('.cat-icon-wrapper').classList.add('bg-slate-100', 'text-slate-500');
+            });
+ 
+            if(cat) {
+                selectedCategory = cat;
+                const el = document.getElementById('cat-' + cat);
+                if(el) {
+                    el.classList.remove('border-slate-200');
+                    el.classList.add('border-sky-500', 'bg-sky-50');
+                    el.querySelector('.cat-icon-wrapper').classList.remove('bg-slate-100', 'text-slate-500');
+                    el.querySelector('.cat-icon-wrapper').classList.add('bg-sky-100', 'text-sky-600');
+                }
+            }
+        }
+ 
+        function closeReportWizard() {
+            const wizard = document.getElementById('report-wizard');
+            wizard.classList.add('translate-y-full');
+            if(window.innerWidth >= 768) wizard.classList.add('opacity-0');
+            
+            const dict = translations[currentAppLang] || translations['en'];
+            
+            stopRecognition(true);
+ 
+            // Full Reset
+            document.getElementById('voice-text').value = '';
+            document.getElementById('location-text-wiz').innerText = dict.wiz_loc_fetch;
+            document.getElementById('location-sub-wiz').innerText = dict.wiz_loc_sub;
+            document.getElementById('location-text-wiz').parentElement.parentElement.classList.remove('border-sky-500', 'bg-sky-50');
+            document.getElementById('location-text-wiz').parentElement.parentElement.classList.add('border-slate-200');
+            selectedLocation = null;
+            selectedCoords = null;
+            selectedCategory = null;
+            capturedPhoto = null;
+            voiceTranscript = '';
+            isMicActive = false;
+            document.getElementById('btn-mic').classList.remove('recording-pulse');
+            document.getElementById('mic-icon').innerText = 'mic';
+            
+            document.getElementById('btn-submit-report').classList.remove('translate-y-0', 'opacity-100');
+            document.getElementById('btn-submit-report').classList.add('translate-y-24', 'opacity-0');
+            document.getElementById('success-icon').classList.remove('scale-100');
+            
+            if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+            const videoEl = document.getElementById('camera-feed');
+            if(videoEl) { videoEl.srcObject = null; }
+            setTimeout(() => { wizard.classList.add('hidden-until-open'); }, 400);
+        }
+ 
+        // Handle category clicks within the wizard
+        document.querySelectorAll('[id^="cat-"]').forEach(el => {
+            el.addEventListener('click', function() {
+                document.querySelectorAll('[id^="cat-"]').forEach(c => {
+                    c.classList.remove('border-sky-500', 'bg-sky-50');
+                    c.classList.add('border-slate-200');
+                    c.querySelector('.cat-icon-wrapper').classList.remove('bg-sky-100', 'text-sky-600');
+                    c.querySelector('.cat-icon-wrapper').classList.add('bg-slate-100', 'text-slate-500');
+                });
+                this.classList.remove('border-slate-200');
+                this.classList.add('border-sky-500', 'bg-sky-50');
+                this.querySelector('.cat-icon-wrapper').classList.remove('bg-slate-100', 'text-slate-500');
+                this.querySelector('.cat-icon-wrapper').classList.add('bg-sky-100', 'text-sky-600');
+                selectedCategory = this.id.replace('cat-', '');
+            });
+        });
+ 
+        // Fetches the real GPS position (falls back to the default Delhi location if unavailable)
+        function simulateGPSWizard() {
+            const locText = document.getElementById('location-text-wiz');
+            const locSub = document.getElementById('location-sub-wiz');
+            const parent = locText.parentElement.parentElement;
+            
+            locText.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin align-middle mr-1">sync</span>...';
+ 
+            const finish = (lat, lng, acc, placeName) => {
+                const dict = translations[currentAppLang] || translations['en'];
+                selectedCoords = { lat: lat, lng: lng };
+                selectedLocation = placeName || dict.wiz_loc_done;
+                locText.textContent = selectedLocation;
+                locSub.textContent = 'Lat: ' + lat.toFixed(4) + ', Lng: ' + lng.toFixed(4) + (acc ? ' • ±' + Math.round(acc) + 'm' : '');
+                parent.classList.remove('border-slate-200');
+                parent.classList.add('border-sky-500', 'bg-sky-50');
+            };
+ 
+            const reverseGeocode = (lat, lng, acc) => {
+                const ctrl = new AbortController();
+                const to = setTimeout(() => ctrl.abort(), 4000);
+                fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&lat=' + lat + '&lon=' + lng, { signal: ctrl.signal, headers: { 'Accept-Language': currentAppLang } })
+                    .then(r => r.json())
+                    .then(j => {
+                        clearTimeout(to);
+                        let name = j && j.display_name ? j.display_name.split(',').slice(0, 3).join(',').trim() : null;
+                        finish(lat, lng, acc, name);
+                    })
+                    .catch(() => { clearTimeout(to); finish(lat, lng, acc, null); });
+            };
+ 
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => reverseGeocode(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+                    () => finish(28.6139, 77.2090, 4, null),
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+                );
+            } else {
+                setTimeout(() => finish(28.6139, 77.2090, 4, null), 600);
+            }
+        }
+ 
+        function nextWizardStep(stepNum) {
+            if(stepNum === 2) {
+                if(!selectedCategory) return alert("Please select an issue category.");
+                if(!selectedLocation) return alert("Please fetch your GPS coordinates.");
+ 
+                document.getElementById('wizard-step-1').classList.add('hidden');
+                document.getElementById('wizard-step-2').classList.remove('hidden');
+                
+                const videoEl = document.getElementById('camera-feed');
+                videoEl.classList.remove('hidden');
+                
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                    .then(stream => { cameraStream = stream; videoEl.srcObject = stream; videoEl.play && videoEl.play().catch(()=>{}); })
+                    .catch(err => console.log("Camera blocked, using mock view", err));
+                }
+            } else if (stepNum === 1) {
+                stopRecognition(true);
+                document.getElementById('wizard-step-2').classList.add('hidden');
+                document.getElementById('wizard-step-1').classList.remove('hidden');
+                if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+            }
+        }
+ 
+        // ---- Real speech-to-text (Web Speech API) in the currently selected app language ----
+        const speechLangMap = { en: 'en-IN', hi: 'hi-IN', zh: 'zh-CN', pt: 'pt-BR', ru: 'ru-RU' };
+ 
+        function setMicIdle() {
+            const btn = document.getElementById('btn-mic');
+            const icon = document.getElementById('mic-icon');
+            isMicActive = false;
+            btn.classList.remove('recording-pulse');
+            icon.innerText = 'mic';
+        }
+ 
+        function toggleVoiceRecord() {
+            const btn = document.getElementById('btn-mic');
+            const icon = document.getElementById('mic-icon');
+            const text = document.getElementById('voice-text');
+ 
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if(!SR) {
+                text.value = t('mic_unsupported');
+                return;
+            }
+ 
+            // Stop if already listening
+            if(isMicActive) {
+                stopRecognition(false);
+                return;
+            }
+ 
+            recognition = new SR();
+            recognition.lang = speechLangMap[currentAppLang] || 'en-IN';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+ 
+            let finalText = voiceTranscript ? voiceTranscript + ' ' : '';
+            let gotError = false;
+ 
+            recognition.onstart = () => {
+                isMicActive = true;
+                btn.classList.add('recording-pulse');
+                icon.innerText = 'stop';
+                if(!finalText) text.value = t('mic_listening');
+            };
+ 
+            recognition.onresult = (event) => {
+                let interim = '';
+                for(let i = event.resultIndex; i < event.results.length; i++) {
+                    const tr = event.results[i][0].transcript;
+                    if(event.results[i].isFinal) finalText += tr + ' ';
+                    else interim += tr;
+                }
+                text.value = (finalText + interim).trim();
+                text.scrollTop = text.scrollHeight;
+            };
+ 
+            recognition.onerror = (e) => {
+                gotError = true;
+                if(e.error === 'not-allowed' || e.error === 'service-not-allowed') text.value = t('mic_denied');
+                else if(e.error === 'no-speech') text.value = finalText.trim() || t('mic_nospeech');
+                else if(e.error !== 'aborted') text.value = finalText.trim() || t('mic_error');
+            };
+ 
+            recognition.onend = () => {
+                setMicIdle();
+                voiceTranscript = finalText.trim();
+                if(voiceTranscript) text.value = voiceTranscript;
+                // Reveal submit once the user has given any evidence (voice text)
+                if(voiceTranscript || !gotError) showSubmitButton();
+            };
+ 
+            try { recognition.start(); }
+            catch(err) { text.value = t('mic_error'); setMicIdle(); }
+        }
+ 
+        // Downscale an image (data URL or element) to keep localStorage small
+        function downscaleToDataURL(source, w, h) {
+            const maxDim = 720;
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            const cw = Math.round(w * scale), ch = Math.round(h * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = cw; canvas.height = ch;
+            canvas.getContext('2d').drawImage(source, 0, 0, cw, ch);
+            return canvas.toDataURL('image/jpeg', 0.6);
+        }
+ 
+        function simulatePhotoCapture() {
+            const videoEl = document.getElementById('camera-feed');
+            const shutterBtn = document.getElementById('btn-shutter');
+            
+            shutterBtn.classList.add('scale-90', 'bg-white/50');
+            setTimeout(() => shutterBtn.classList.remove('scale-90', 'bg-white/50'), 150);
+ 
+            // Grab the real frame from the camera (if the camera is running)
+            try {
+                if(videoEl && videoEl.videoWidth > 0) {
+                    capturedPhoto = downscaleToDataURL(videoEl, videoEl.videoWidth, videoEl.videoHeight);
+                }
+            } catch(e) { capturedPhoto = null; }
+ 
+            if(videoEl) videoEl.pause();
+            showSubmitButton();
+        }
+ 
+        function simulateGalleryUpload() {
+            document.getElementById('hidden-file-input').click();
+        }
+ 
+        function handleSimulatedUpload(event) {
+            const file = event && event.target && event.target.files ? event.target.files[0] : null;
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try { capturedPhoto = downscaleToDataURL(img, img.naturalWidth, img.naturalHeight); }
+                        catch(e) { capturedPhoto = null; }
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            showSubmitButton();
+        }
+ 
+        function simulateCameraFlip() {
+            const videoEl = document.getElementById('camera-feed');
+            if(videoEl) {
+                videoEl.style.transform = videoEl.style.transform === 'scaleX(-1)' ? 'scaleX(1)' : 'scaleX(-1)';
+            }
+        }
+ 
+        function submitGrievance() {
+            const submitBtn = document.getElementById('btn-submit-report');
+            submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px] align-middle">sync</span> Encrypting...';
+ 
+            // Make sure the dictation is finalised before saving
+            stopRecognition(true);
+            const descText = (voiceTranscript || '').trim();
+            
+            setTimeout(() => {
+                document.getElementById('wizard-step-2').classList.add('hidden');
+                document.getElementById('wizard-step-3').classList.remove('hidden');
+                
+                const newId = 'WO-2026-' + Math.floor(Math.random() * 9000 + 1000);
+                document.getElementById('generated-id').innerText = newId;
+ 
+                // Save the report (persisted so it shows in "My Reports")
+                const newReport = {
+                    id: newId,
+                    cat: selectedCategory,
+                    loc: selectedLocation,
+                    coords: selectedCoords,
+                    desc: descText,
+                    photo: capturedPhoto,
+                    status: 'evaluating',
+                    timeKey: 'time_now',
+                    createdAt: Date.now(),
+                    user: true
+                };
+                historicalGrievances.unshift(newReport);
+                saveUserReports();
+                renderHistoricalActivity();
+ 
+                setTimeout(() => {
+                    document.getElementById('success-icon').classList.add('scale-100');
+                    document.getElementById('success-icon').classList.add('transition-transform', 'duration-500', 'ease-out');
+                }, 100);
+ 
+                if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+                
+                const dict = translations[currentAppLang] || translations['en'];
+                submitBtn.innerHTML = dict.btn_submit;
+            }, 1200);
+        }
+ 
+        // --- 5. Activity History: persistence, rendering & detail view ---
+        const STORAGE_KEY = 'syncpolis_citizen_reports';
+ 
+        // Seed (demo) reports
+        const seedGrievances = [
+            { id: 'WO-2026-DL-0881', cat: 'power', loc: 'Sector 3 Market, Dwarka', status: 'processing', timeKey: 'time_yest' },
+            { id: 'WO-2026-DL-0442', cat: 'waste', loc: 'Lajpat Nagar Block N', status: 'resolved', timeKey: '12 Sep 2026' },
+            { id: 'WO-2026-DL-0211', cat: 'road', loc: 'NH-48 Toll Plaza', status: 'resolved', timeKey: '04 Sep 2026' }
+        ];
+ 
+        function loadUserReports() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr : [];
+            } catch(e) { return []; }
+        }
+ 
+        function saveUserReports() {
+            const users = historicalGrievances.filter(r => r.user);
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+            } catch(e) {
+                // Storage full: retry without photos
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(users.map(r => Object.assign({}, r, { photo: null }))));
+                } catch(e2) { console.log('Could not persist reports', e2); }
+            }
+        }
+ 
+        let historicalGrievances = [...loadUserReports(), ...seedGrievances];
+        let currentDetailId = null;
+ 
+        function catStyle(cat) {
+            if(cat === 'water') return { color: 'bg-sky-500', txt: 'text-sky-700', bg: 'bg-sky-50', border: 'border-sky-200', titleKey: 'rep_water', catKey: 'app_cat_water_txt' };
+            if(cat === 'road') return { color: 'bg-amber-500', txt: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', titleKey: 'rep_road', catKey: 'app_cat_road_txt' };
+            if(cat === 'power') return { color: 'bg-emerald-500', txt: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', titleKey: 'rep_power', catKey: 'app_cat_power_txt' };
+            return { color: 'bg-rose-500', txt: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', titleKey: 'rep_waste', catKey: 'app_cat_waste_txt' };
+        }
+ 
+        function formatReportTime(item, dict) {
+            if(item.createdAt) {
+                const loc = { en: 'en-IN', hi: 'hi-IN', zh: 'zh-CN', pt: 'pt-BR', ru: 'ru-RU' }[currentAppLang] || 'en-IN';
+                try { return new Date(item.createdAt).toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' }); }
+                catch(e) { return new Date(item.createdAt).toLocaleString(); }
+            }
+            return dict[item.timeKey] || item.timeKey;
+        }
+ 
+        function statusText(status, dict) {
+            if(status === 'evaluating') return dict.stat_evaluating;
+            if(status === 'processing') return dict.stat_processing;
+            if(status === 'resolved') return dict.stat_resolved;
+            return status;
+        }
+ 
+        function timelineHTML(status, dict) {
+            let step1 = 'bg-gov-highlight shadow-[0_0_8px_rgba(2,132,199,0.5)]';
+            let step2 = 'bg-slate-200 border-2 border-white box-content shadow-none';
+            let step3 = 'bg-slate-200 border-2 border-white box-content shadow-none';
+            let step4 = 'bg-slate-200 border-2 border-white box-content shadow-none';
+            let line1 = 'bg-slate-200', line2 = 'bg-slate-200', line3 = 'bg-slate-200';
+ 
+            if(status === 'processing') {
+                step2 = 'bg-gov-highlight shadow-[0_0_8px_rgba(2,132,199,0.5)] border-none';
+                line1 = 'bg-gov-highlight';
+            } else if(status === 'resolved') {
+                step2 = 'bg-gov-highlight shadow-none border-none';
+                step3 = 'bg-gov-highlight shadow-none border-none';
+                step4 = 'bg-gov-highlight shadow-[0_0_8px_rgba(2,132,199,0.5)] border-none';
+                line1 = 'bg-gov-highlight'; line2 = 'bg-gov-highlight'; line3 = 'bg-gov-highlight';
+            }
+ 
+            return `
+                <div class="flex items-center gap-0 w-full mb-3">
+                    <div class="w-3.5 h-3.5 rounded-full ${step1} z-10 flex-shrink-0"></div>
+                    <div class="h-1 ${line1} flex-grow"></div>
+                    <div class="w-3.5 h-3.5 rounded-full ${step2} z-10 flex-shrink-0"></div>
+                    <div class="h-1 ${line2} flex-grow"></div>
+                    <div class="w-3.5 h-3.5 rounded-full ${step3} z-10 flex-shrink-0"></div>
+                    <div class="h-1 ${line3} flex-grow"></div>
+                    <div class="w-3.5 h-3.5 rounded-full ${step4} z-10 flex-shrink-0"></div>
+                </div>
+                <div class="flex justify-between text-[8.5px] uppercase tracking-wider font-bold text-slate-400">
+                    <span class="${status !== 'evaluating' ? 'text-gov-highlight' : 'text-slate-500'}">${dict.trk_sub}</span>
+                    <span class="${status === 'processing' || status === 'resolved' ? 'text-gov-highlight' : ''} text-center">${dict.trk_ver}</span>
+                    <span class="${status === 'resolved' ? 'text-gov-highlight' : ''} text-center">${dict.trk_san}</span>
+                    <span class="${status === 'resolved' ? 'text-emerald-500' : ''} text-right">${dict.trk_res}</span>
+                </div>`;
+        }
+ 
+        function renderHistoricalActivity() {
+            const list = document.getElementById('activity-list');
+            if(!list) return;
+            list.innerHTML = '';
+            
+            const dict = translations[currentAppLang] || translations['en'];
+ 
+            if(!historicalGrievances.length) {
+                list.innerHTML = `<p class="text-center text-sm text-slate-500 py-10">${esc(t('empty_reports'))}</p>`;
+                return;
+            }
+ 
+            historicalGrievances.forEach(item => {
+                const s = catStyle(item.cat);
+                let colorClass = s.color, txtColor = s.txt, bgBadge = s.bg, borderColor = s.border;
+ 
+                if(item.status === 'resolved') {
+                    colorClass = 'bg-emerald-500'; txtColor = 'text-emerald-700'; bgBadge = 'bg-emerald-50'; borderColor = 'border-emerald-200';
+                }
+ 
+                const stText = statusText(item.status, dict);
+                const timeStr = formatReportTime(item, dict);
+                const titleStr = dict[s.titleKey] || "Infrastructure Report";
+                const shortId = String(item.id).replace('WO-2026-','');
+ 
+                const thumb = item.photo
+                    ? `<img src="${item.photo}" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0">`
+                    : '';
+ 
+                const cardHTML = `
+                    <div onclick="openReportDetail('${esc(item.id)}')" class="bg-white rounded-2xl sm:rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col gap-3 relative overflow-hidden animate-slide-up hover:shadow-md transition-shadow cursor-pointer">
+                        <div class="absolute top-0 left-0 w-1.5 h-full ${colorClass}"></div>
+                        <div class="flex justify-between items-start pl-2 gap-3">
+                            <div class="flex gap-3 items-start min-w-0">
+                                ${thumb}
+                                <div class="min-w-0">
+                                    <span class="text-[10px] font-mono font-bold ${txtColor} ${bgBadge} px-2 py-0.5 rounded border ${borderColor} uppercase">${esc(stText)}</span>
+                                    <h4 class="font-bold text-sm sm:text-base text-slate-900 mt-2 leading-tight">${esc(titleStr)}</h4>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-mono text-right leading-tight shrink-0">${esc(timeStr)}<br>${esc(shortId)}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 pl-2">${esc(item.loc)}</p>
+                        ${item.desc ? `<p class="text-xs text-slate-600 pl-2 italic line-clamp-2">“${esc(item.desc)}”</p>` : ''}
+                        
+                        <div class="mt-2 pl-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            ${timelineHTML(item.status, dict)}
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += cardHTML;
+            });
+        }
+ 
+        function openReportDetail(id) {
+            const item = historicalGrievances.find(r => r.id === id);
+            if(!item) return;
+            currentDetailId = id;
+            const dict = translations[currentAppLang] || translations['en'];
+            const s = catStyle(item.cat);
+            let txtColor = s.txt, bgBadge = s.bg, borderColor = s.border;
+            if(item.status === 'resolved') { txtColor = 'text-emerald-700'; bgBadge = 'bg-emerald-50'; borderColor = 'border-emerald-200'; }
+ 
+            document.getElementById('detail-heading').textContent = t('det_heading');
+ 
+            const row = (label, value) => `
+                <div>
+                    <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-1">${esc(label)}</span>
+                    <div class="text-sm text-slate-800 font-semibold">${value}</div>
+                </div>`;
+ 
+            const coordsLine = item.coords
+                ? `<div class="text-[11px] text-slate-500 font-mono mt-0.5">Lat: ${Number(item.coords.lat).toFixed(4)}, Lng: ${Number(item.coords.lng).toFixed(4)}</div>` : '';
+ 
+            document.getElementById('detail-body').innerHTML = `
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="font-bold text-lg text-slate-900 leading-tight">${esc(dict[s.titleKey])}</h3>
+                    <span class="text-[10px] font-mono font-bold ${txtColor} ${bgBadge} px-2 py-1 rounded border ${borderColor} uppercase shrink-0">${esc(statusText(item.status, dict))}</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">${timelineHTML(item.status, dict)}</div>
+                <div class="grid grid-cols-2 gap-4">
+                    ${row(t('det_id'), `<span class="font-mono">${esc(item.id)}</span>`)}
+                    ${row(t('det_cat'), esc(dict[s.catKey]))}
+                    ${row(t('det_time'), esc(formatReportTime(item, dict)))}
+                    ${row(t('det_status'), esc(statusText(item.status, dict)))}
+                </div>
+                ${row(t('det_loc'), esc(item.loc) + coordsLine)}
+                ${row(t('det_desc'), item.desc ? `<span class="font-medium">${esc(item.desc)}</span>` : `<span class="text-slate-400 font-normal">${esc(t('det_no_desc'))}</span>`)}
+                <div>
+                    <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-2">${esc(t('det_photo'))}</span>
+                    ${item.photo
+                        ? `<img src="${item.photo}" alt="Evidence" class="w-full rounded-2xl border border-slate-200 object-cover max-h-72">`
+                        : `<div class="text-sm text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center">${esc(t('det_no_photo'))}</div>`}
+                </div>
+            `;
+ 
+            const modal = document.getElementById('report-detail');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+ 
+        function closeReportDetail() {
+            currentDetailId = null;
+            const modal = document.getElementById('report-detail');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+ 
+        // --- 6. Leaflet Map Interactive ---
+        let miniMap;
+        let userMarker;
+        let worksLayer;
+        let miniMapInitialized = false;
+        const DEFAULT_CENTER = [28.6139, 77.2090];
+ 
+        function placeWorks(lat, lng) {
+            if(!miniMap) return;
+            if(worksLayer) worksLayer.clearLayers(); else worksLayer = L.layerGroup().addTo(miniMap);
+            const works = [
+                { dLat: 0.0011, dLng: 0.0010, color: '#e11d48', label: t('rep_waste') },
+                { dLat: -0.0029, dLng: -0.0040, color: '#d97706', label: t('rep_road') },
+                { dLat: 0.0041, dLng: 0.0060, color: '#0284c7', label: t('rep_water') }
+            ];
+            works.forEach(w => {
+                L.circleMarker([lat + w.dLat, lng + w.dLng], { radius: 8, fillOpacity: 1, weight: 2, color: 'white', fillColor: w.color })
+                    .bindPopup(w.label)
+                    .addTo(worksLayer);
+            });
+        }
+ 
+        function setUserMarker(lat, lng) {
+            if(!miniMap) return;
+            if(userMarker) miniMap.removeLayer(userMarker);
+            const iconHtml = `<div class="relative flex items-center justify-center"><div class="gps-pulse"></div><div class="gps-ping"></div></div>`;
+            const locIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+            userMarker = L.marker([lat, lng], { icon: locIcon }).addTo(miniMap);
+        }
+ 
+        function initMiniMap() {
+            if(miniMapInitialized) { if(miniMap) miniMap.invalidateSize(); return; }
+            const container = document.getElementById('mini-map');
+            if(!container || typeof L === 'undefined') return;
+ 
+            miniMap = L.map('mini-map', { 
+                zoomControl: false,
+                attributionControl: false,
+                scrollWheelZoom: false
+            }).setView(DEFAULT_CENTER, 14);
+ 
+            // OpenStreetMap tiles (reliable, no API key required)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                subdomains: 'abc',
+                crossOrigin: true
+            }).addTo(miniMap);
+ 
+            L.control.attribution({ prefix: false, position: 'bottomright' })
+                .addAttribution('© OpenStreetMap').addTo(miniMap);
+ 
+            placeWorks(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+            miniMapInitialized = true;
+ 
+            // Make sure tiles size correctly once layout settles
+            setTimeout(() => miniMap.invalidateSize(), 100);
+            setTimeout(() => miniMap.invalidateSize(), 600);
+ 
+            // Try to center on the real user location
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    miniMap.setView([lat, lng], 14);
+                    placeWorks(lat, lng);
+                    setUserMarker(lat, lng);
+                }, () => { setUserMarker(DEFAULT_CENTER[0], DEFAULT_CENTER[1]); }, { timeout: 8000, maximumAge: 60000 });
+            } else {
+                setUserMarker(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+            }
+        }
+ 
+        function locateOnMap() {
+            if(!miniMap) return;
+            const go = (lat, lng) => {
+                miniMap.flyTo([lat, lng], 15, { animate: true, duration: 1.5 });
+                placeWorks(lat, lng);
+                setUserMarker(lat, lng);
+            };
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => go(pos.coords.latitude, pos.coords.longitude),
+                    () => go(DEFAULT_CENTER[0], DEFAULT_CENTER[1]),
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                go(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+            }
+        }
+ 
+        window.onload = () => {
+            applyTranslations(currentAppLang);
+            renderHistoricalActivity();
+            document.getElementById('report-wizard').classList.add('hidden-until-open');
+            initMiniMap();
+        };
+ 
+    </script>
+</body>
+</html>

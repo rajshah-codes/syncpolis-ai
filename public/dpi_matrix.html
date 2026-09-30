@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SyncPolis AI - DPI Matrix</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #f1f5f9; color: #0f172a; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border: 1px solid #e2e8f0; }
+        
+        /* 3D Isometric Hover Effects */
+        .node-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .node-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border-color: #38bdf8; }
+        
+        .animated-line { stroke-dasharray: 10; animation: dash 20s linear infinite; }
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="h-20 shrink-0 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-40 shadow-sm relative">
+        <div class="flex items-center gap-4">
+            <button onclick="window.location.href='new_new_index.html'" class="h-10 px-5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-sm flex items-center gap-2 transition-all shadow-[0_4px_15px_rgba(244,63,94,0.4)] active:scale-95">
+                <span class="material-symbols-outlined text-lg">home</span>
+                <span>Dashboard</span>
+            </button>
+            <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+            <div class="flex items-center gap-3">
+                <img src="assets/download.png" alt="SyncPolis Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-400 shadow-md p-0.5 bg-white">
+                <div class="flex flex-col">
+                    <span class="font-display font-extrabold text-lg text-slate-900 leading-tight">DPI Architecture Matrix</span>
+                    <span class="text-[10px] font-mono text-emerald-600 font-bold uppercase tracking-widest">Digital Public Good Infrastructure</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Architecture Diagram Workspace -->
+    <main class="flex-grow p-6 sm:p-12 flex flex-col items-center relative overflow-y-auto">
+        <div class="max-w-[1200px] w-full flex flex-col gap-12 relative z-10 pb-20">
+            
+            <div class="text-center max-w-2xl mx-auto mb-4">
+                <h1 class="text-3xl font-display font-extrabold text-slate-900 mb-3">Google Cloud GovTech Stack</h1>
+                <p class="text-slate-600 font-sans">Visualizing the real-time data ingestion, AI processing, and geospatial routing powering the SyncPolis Digital Public Infrastructure.</p>
+            </div>
+
+            <!-- Layer 1: Presentation & Ingestion -->
+            <div class="w-full flex flex-col items-center gap-4">
+                <span class="text-xs font-mono font-bold text-slate-400 uppercase tracking-[0.2em]">1. Ingestion Layer</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                    <div class="node-card glass-panel p-6 rounded-2xl flex items-center gap-5 cursor-pointer">
+                        <div class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0"><span class="material-symbols-outlined text-3xl">local_fire_department</span></div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Firebase & Cloud Run</h3>
+                            <p class="text-xs text-slate-500 mt-1">Real-time DB handling citizen auth, app state, and rapid prototyping endpoints.</p>
+                        </div>
+                    </div>
+                    <div class="node-card glass-panel p-6 rounded-2xl flex items-center gap-5 cursor-pointer">
+                        <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0"><span class="material-symbols-outlined text-3xl">mic</span></div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Cloud Speech-to-Text</h3>
+                            <p class="text-xs text-slate-500 mt-1">Processing multimodal linguistic grievances across diverse Indian dialects.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connecting Arrow -->
+            <div class="flex justify-center -my-6 text-slate-300"><span class="material-symbols-outlined text-4xl">keyboard_double_arrow_down</span></div>
+
+            <!-- Layer 2: Core Intelligence (AI) -->
+            <div class="w-full flex flex-col items-center gap-4">
+                <span class="text-xs font-mono font-bold text-slate-400 uppercase tracking-[0.2em]">2. Intelligence Engine</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                    <div class="node-card glass-panel p-6 rounded-2xl flex items-center gap-5 cursor-pointer border-t-4 border-t-purple-500">
+                        <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shrink-0"><span class="material-symbols-outlined text-3xl">auto_awesome</span></div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Gemini 3.5 Multimodal</h3>
+                            <p class="text-xs text-slate-500 mt-1">Analyzes citizen photo uploads to detect structural decay and synthesizes CPWD action plans.</p>
+                        </div>
+                    </div>
+                    <div class="node-card glass-panel p-6 rounded-2xl flex items-center gap-5 cursor-pointer border-t-4 border-t-emerald-500">
+                        <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0"><span class="material-symbols-outlined text-3xl">model_training</span></div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Vertex AI (AutoML)</h3>
+                            <p class="text-xs text-slate-500 mt-1">Predictive modeling mapping regional vulnerability hotspots based on historical grievance data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connecting Arrow -->
+            <div class="flex justify-center -my-6 text-slate-300"><span class="material-symbols-outlined text-4xl">keyboard_double_arrow_down</span></div>
+
+            <!-- Layer 3: Data & Geospatial -->
+            <div class="w-full flex flex-col items-center gap-4">
+                <span class="text-xs font-mono font-bold text-slate-400 uppercase tracking-[0.2em]">3. Data Warehouse & Geospatial</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                    <div class="node-card glass-panel p-6 rounded-2xl flex items-center gap-5 cursor-pointer">
+                        <div class="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shrink-0"><span class="material-symbols-outlined text-3xl">database</span></div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Google BigQuery</h3>
+                            <p class="text-xs text-slate-500 mt-1">Massive-scale data warehouse cross-referencing grievances with data.gov.in public datasets.</p>
+                        </div>
+                    </div>
+                    <div class="node-card glass-panel p-6 rounded-2xl flex items-center gap-5 cursor-pointer">
+                        <div class="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0"><span class="material-symbols-outlined text-3xl">map</span></div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-900">Google Maps Platform</h3>
+                            <p class="text-xs text-slate-500 mt-1">Geospatial routing and live heatmap plotting for administrative field engineers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>

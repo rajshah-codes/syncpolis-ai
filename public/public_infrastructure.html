@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>National Public Works Observatory — Statutory Command Center</title>
+    
+    <!-- Tailwind CSS Engine -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gov: {
+                            base: '#0f172a',      /* Slate 900 */
+                            panel: '#1e293b',     /* Slate 800 */
+                            border: '#334155',    /* Slate 700 */
+                            highlight: '#0284c7', /* Sky 600 */
+                            light: '#f8fafc'      /* Slate 50 */
+                        },
+                        sector: {
+                            water: '#0284c7',     /* Sky 600 */
+                            road: '#d97706',      /* Amber 600 */
+                            power: '#059669',     /* Emerald 600 */
+                            waste: '#e11d48'      /* Rose 600 */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    },
+                    animation: {
+                        'scrolling-text': 'scrollText 60s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'slide-in-left': 'slideInLeft 0.3s ease-out forwards',
+                        'slide-in-right': 'slideInRight 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        scrollText: {
+                            '0%': { transform: 'translateX(100vw)' },
+                            '100%': { transform: 'translateX(-100%)' }
+                        },
+                        slideInLeft: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0)' }
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(100%)' },
+                            '100%': { transform: 'translateX(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet GIS & Mapping Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <!-- Google Fonts & Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base Reset & Prevent Bounce on Mobile */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f1f5f9; 
+            color: #0f172a; 
+            overflow: hidden; 
+            overscroll-behavior: none;
+        }
+        
+        /* Map Container Base */
+        #gis-map { height: 100%; width: 100%; z-index: 10; background: #cbd5e1; }
+        
+        /* Glassmorphism UI Panels */
+        .gov-glass-panel { 
+            background: rgba(255, 255, 255, 0.96); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(203, 213, 225, 0.9); 
+            box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.15); 
+        }
+
+        .dark-glass-panel {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(51, 65, 85, 0.8);
+        }
+        
+        /* Advanced Custom Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Dynamic Map Pins & Pulse Animation */
+        .pulse-pin { 
+            border-radius: 50%; 
+            box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); 
+            animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.6, 1); 
+            transition: all 0.3s ease; 
+        }
+        .pulse-pin:hover { transform: scale(1.15) !important; z-index: 1000 !important; }
+        @keyframes pulse-ring { 
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.8); } 
+            70% { transform: scale(1.3); box-shadow: 0 0 0 15px rgba(225, 29, 72, 0); } 
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } 
+        }
+        
+        /* Map Popup Styling Override - Clean Governmental Look */
+        .leaflet-popup-content-wrapper { 
+            border-radius: 0.75rem; 
+            padding: 0; 
+            box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3); 
+            border: 1px solid #e2e8f0; 
+            background: #ffffff;
+            overflow: hidden;
+        }
+        .leaflet-popup-tip-container { display: none; }
+        .leaflet-container a.leaflet-popup-close-button { 
+            top: 10px; right: 10px; 
+            color: #64748b; 
+            padding: 4px; z-index: 20; 
+            background: rgba(241, 245, 249, 0.8); 
+            backdrop-filter: blur(4px);
+            border-radius: 50%; 
+            width: 24px; height: 24px; 
+            text-align: center; line-height: 16px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+        }
+        .leaflet-container a.leaflet-popup-close-button:hover { color: #0f172a; background: #e2e8f0; }
+        
+        /* Fix Leaflet Zoom Controls Position */
+        .leaflet-right .leaflet-control { margin-right: 16px !important; } 
+        .leaflet-bottom .leaflet-control { margin-bottom: 80px !important; } 
+        @media (min-width: 768px) {
+            .leaflet-right .leaflet-control { margin-right: 400px !important; } /* Clear right panel on desktop */
+            .leaflet-bottom .leaflet-control { margin-bottom: 50px !important; }
+        }
+        .leaflet-bar a { 
+            background-color: #ffffff; color: #0f172a; border-color: #cbd5e1; 
+            font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            width: 36px !important; height: 36px !important; line-height: 36px !important;
+        }
+        .leaflet-bar a:hover { background-color: #f8fafc; color: #0284c7; }
+
+        /* Mobile Drawer Overlay */
+        #mobile-overlay {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #mobile-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen bg-slate-100">
+
+    <!-- Top Command Header - Responsive & Strict Coloring -->
+    <header class="w-full shrink-0 bg-gradient-to-r from-[#0b132b] via-[#1c2541] to-[#0b132b] border-b border-slate-700/80 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between z-40 shadow-xl relative text-white min-h-[72px]">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-3 w-full sm:w-auto mb-2 sm:mb-0 justify-between sm:justify-start">
+            <div onclick="window.location.href='new_new_index.html'" class="flex items-center gap-3 group cursor-pointer">
+                <img src="assets/download.png" alt="Government Emblem" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover shadow-sm border-[1.5px] border-sky-500/50 group-hover:border-sky-400 transition-all bg-white p-0.5">
+                <div class="flex flex-col">
+                    <span class="font-display font-extrabold text-[15px] sm:text-[18px] tracking-tight text-white leading-none">Public Works <span class="text-sky-400">Observatory</span></span>
+                    <span class="text-[8px] sm:text-[9px] font-mono text-slate-400 uppercase tracking-widest mt-1">National Statutory Command</span>
+                </div>
+            </div>
+            <!-- Mobile Menu Toggle (Visible only on very small screens if needed, but handled by FABs below) -->
+        </div>
+
+        <!-- Telemetry Indicators (Hidden on Mobile, Visible on Desktop) -->
+        <div class="hidden lg:flex items-center gap-5 xl:gap-8 text-xs font-mono bg-slate-900/60 px-5 py-2 rounded-xl border border-slate-700/50 shadow-inner">
+            <div class="flex flex-col">
+                <span class="text-slate-400 text-[9px] uppercase font-bold tracking-widest">Monitored Zones</span>
+                <span class="text-slate-100 font-bold text-xs sm:text-sm tracking-tight" id="kpi-zones">736 Districts</span>
+            </div>
+            <div class="w-px h-6 bg-slate-700"></div>
+            <div class="flex flex-col">
+                <span class="text-slate-400 text-[9px] uppercase font-bold tracking-widest">Active Reports</span>
+                <span class="text-sky-400 font-bold text-xs sm:text-sm tracking-tight flex items-center gap-1.5">
+                    <span id="kpi-grievances">48,924</span> 
+                    <span class="material-symbols-outlined text-[12px] animate-spin">sync</span>
+                </span>
+            </div>
+            <div class="w-px h-6 bg-slate-700"></div>
+            <div class="flex flex-col">
+                <span class="text-slate-400 text-[9px] uppercase font-bold tracking-widest">National Deficit</span>
+                <span class="text-rose-400 font-bold text-xs sm:text-sm tracking-tight flex items-center gap-1.5" id="kpi-deficit">
+                    38.4% <span class="text-[8px] px-1 py-0.5 bg-rose-500/20 rounded border border-rose-500/50 text-rose-300">CRITICAL</span>
+                </span>
+            </div>
+            <div class="w-px h-6 bg-slate-700 hidden xl:block"></div>
+            <div class="hidden xl:flex flex-col">
+                <span class="text-slate-400 text-[9px] uppercase font-bold tracking-widest">Sanctioned Funds</span>
+                <span class="text-emerald-400 font-bold text-sm tracking-tight" id="kpi-budget">₹1,482.6 Cr</span>
+            </div>
+        </div>
+
+        <!-- Navigation Actions (Right Side) -->
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end mt-2 sm:mt-0">
+            <div class="relative group flex-grow sm:flex-grow-0">
+                <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px] pointer-events-none">domain</span>
+                <select id="zone-selector" onchange="changeRegion(this.value)" class="w-full bg-slate-800/80 border border-slate-600 text-white text-[11px] font-bold rounded-lg pl-9 pr-8 py-2.5 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer appearance-none transition-all hover:border-slate-400 shadow-sm">
+                    <option value="all">National Map (All-India)</option>
+                    <option value="delhi" selected>Delhi-NCR Capital Region</option>
+                    <option value="mumbai">Mumbai Metropolitan Zone</option>
+                    <option value="bangalore">Bengaluru Tech Corridor</option>
+                    <option value="chennai">Chennai Coastal Division</option>
+                    <option value="kolkata">Kolkata Municipal Basin</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] pointer-events-none">expand_more</span>
+            </div>
+            <button onclick="window.location.href='new_new_index.html'" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(2,132,199,0.4)] shrink-0 active:scale-95">
+                <span class="material-symbols-outlined text-[15px]">dashboard</span> <span class="hidden sm:block">Dashboard</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <div class="flex-grow flex relative w-full h-full overflow-hidden bg-slate-200">
+        
+        <!-- Mobile Overlay for Drawers -->
+        <div id="mobile-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[45]" onclick="closeAllPanels()"></div>
+        
+        <!-- GIS Map Canvas -->
+        <div id="gis-map" class="absolute inset-0"></div>
+
+        <!-- Basemap Switching Control (Bottom Left - Desktop) / (Top Center - Mobile) -->
+        <div class="absolute top-4 sm:top-auto sm:bottom-6 left-1/2 sm:left-6 -translate-x-1/2 sm:translate-x-0 z-20 flex gov-glass-panel p-1.5 rounded-xl shadow-lg border border-slate-300">
+            <button onclick="setBaseMap('hybrid')" id="btn-hybrid" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all bg-slate-900 text-white flex items-center gap-1.5 shadow-sm border border-slate-700 uppercase tracking-wide">
+                <span class="material-symbols-outlined text-[14px] sm:text-[16px]">satellite_alt</span> Satellite
+            </button>
+            <button onclick="setBaseMap('street')" id="btn-street" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center gap-1.5 border border-transparent bg-transparent uppercase tracking-wide">
+                <span class="material-symbols-outlined text-[14px] sm:text-[16px]">map</span> Street Map
+            </button>
+        </div>
+
+        <!-- Mobile Floating Action Buttons (FABs) -->
+        <div class="md:hidden absolute bottom-6 left-4 z-40">
+            <button onclick="toggleMobilePanel('left-panel')" class="w-12 h-12 bg-white rounded-full shadow-2xl border border-slate-200 flex items-center justify-center text-slate-700 hover:text-sky-600 transition-colors">
+                <span class="material-symbols-outlined text-[24px]">tune</span>
+            </button>
+        </div>
+        <div class="md:hidden absolute bottom-6 right-4 z-40">
+            <button onclick="toggleMobilePanel('right-panel')" class="w-12 h-12 bg-slate-900 rounded-full shadow-[0_10px_25px_rgba(15,23,42,0.5)] border border-slate-700 flex items-center justify-center text-white hover:text-sky-400 transition-colors relative">
+                <span class="material-symbols-outlined text-[24px]">format_list_numbered</span>
+                <span class="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-slate-900"></span>
+            </button>
+        </div>
+
+        <!-- Floating Infrastructure Filters (Left Panel) -->
+        <!-- Fixed positioning on mobile (offscreen), absolute on desktop -->
+        <div id="left-panel" class="fixed md:absolute top-0 md:top-6 left-0 h-full md:h-auto w-[280px] md:w-64 z-50 md:z-20 transform -translate-x-full md:translate-x-0 transition-transform duration-300 gov-glass-panel border-r md:border border-slate-300 md:rounded-2xl shadow-2xl flex flex-col">
+            
+            <!-- Mobile Header for Panel -->
+            <div class="md:hidden flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50 shrink-0">
+                <span class="font-bold text-sm text-slate-800">Map Filters</span>
+                <button onclick="closeAllPanels()" class="text-slate-500 hover:text-slate-800">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="p-4 flex flex-col gap-2.5 overflow-y-auto flex-grow">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">Public Works Sectors</span>
+                </div>
+                
+                <label class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors border border-transparent hover:border-slate-200 group">
+                    <span class="flex items-center gap-2.5 text-xs font-semibold text-slate-700 group-hover:text-slate-900">
+                        <span class="w-3.5 h-3.5 rounded-full shadow-inner bg-sky-500"></span> Potable Water & Drain
+                    </span>
+                    <input type="checkbox" id="layer-water" checked onchange="toggleLayer()" class="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer">
+                </label>
+
+                <label class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors border border-transparent hover:border-slate-200 group">
+                    <span class="flex items-center gap-2.5 text-xs font-semibold text-slate-700 group-hover:text-slate-900">
+                        <span class="w-3.5 h-3.5 rounded-full shadow-inner bg-amber-500"></span> Roads & Transit
+                    </span>
+                    <input type="checkbox" id="layer-road" checked onchange="toggleLayer()" class="w-4 h-4 text-amber-600 bg-white border-slate-300 rounded cursor-pointer">
+                </label>
+
+                <label class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors border border-transparent hover:border-slate-200 group">
+                    <span class="flex items-center gap-2.5 text-xs font-semibold text-slate-700 group-hover:text-slate-900">
+                        <span class="w-3.5 h-3.5 rounded-full shadow-inner bg-emerald-500"></span> Power Grid & Energy
+                    </span>
+                    <input type="checkbox" id="layer-power" checked onchange="toggleLayer()" class="w-4 h-4 text-emerald-600 bg-white border-slate-300 rounded cursor-pointer">
+                </label>
+
+                <label class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors border border-transparent hover:border-slate-200 group">
+                    <span class="flex items-center gap-2.5 text-xs font-semibold text-slate-700 group-hover:text-slate-900">
+                        <span class="w-3.5 h-3.5 rounded-full shadow-inner bg-rose-500"></span> Solid Waste & Sewage
+                    </span>
+                    <input type="checkbox" id="layer-waste" checked onchange="toggleLayer()" class="w-4 h-4 text-rose-600 bg-white border-slate-300 rounded cursor-pointer">
+                </label>
+
+                <div class="h-px bg-slate-200 my-1"></div>
+
+                <!-- Incident Density Heatmap Toggle -->
+                <label class="flex items-center justify-between p-3 rounded-xl bg-slate-900 cursor-pointer transition-all hover:bg-slate-800 shadow-md group border border-slate-700 mt-1">
+                    <span class="flex items-center gap-2 text-xs font-bold text-white font-mono">
+                        <span class="material-symbols-outlined text-rose-400 text-[18px] group-hover:animate-pulse">blur_on</span> Severity Heatmap
+                    </span>
+                    <div class="relative inline-block w-9 h-5 cursor-pointer">
+                        <input type="checkbox" id="layer-heatmap" checked onchange="toggleLayer()" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Floating Resource Allocation Queue (Right Panel) -->
+        <!-- Fixed positioning on mobile (offscreen right), absolute on desktop -->
+        <div id="right-panel" class="fixed md:absolute top-0 md:top-6 right-0 h-full md:max-h-[calc(100vh-140px)] w-[320px] md:w-[380px] z-50 md:z-20 transform translate-x-full md:translate-x-0 transition-transform duration-300 gov-glass-panel border-l md:border border-slate-300 md:rounded-2xl shadow-2xl flex flex-col">
+            
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 shrink-0 bg-white/50 rounded-t-2xl">
+                <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-slate-800 text-[20px]">assignment_late</span>
+                    <h3 class="font-display font-extrabold text-[13px] sm:text-[14px] text-slate-900 uppercase tracking-wide">Statutory Action Queue</h3>
+                </div>
+                <!-- Desktop Rank Badge -->
+                <span class="hidden md:flex text-[9px] font-mono bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded border border-slate-200 items-center gap-1">
+                    <span class="material-symbols-outlined text-[12px]">sort</span> BY SEVERITY
+                </span>
+                <!-- Mobile Close Button -->
+                <button onclick="closeAllPanels()" class="md:hidden text-slate-500 hover:text-slate-800 p-1">
+                    <span class="material-symbols-outlined">close_fullscreen</span>
+                </button>
+            </div>
+
+            <!-- Dynamic Scrolling List -->
+            <div class="overflow-y-auto space-y-3 p-3 sm:p-4 flex-grow scroll-smooth" id="hotspots-list">
+                <!-- Content generated by renderHotspotSidebar() -->
+            </div>
+
+            <!-- Official CSV Export Button -->
+            <div class="p-3 sm:p-4 border-t border-slate-200 shrink-0 mt-auto bg-slate-50/80 rounded-b-2xl">
+                <button onclick="exportPriorityManifestCSV()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 rounded-xl text-[11px] sm:text-xs uppercase tracking-widest shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer border border-slate-700 active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">download</span> Export Ledger (CSV)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Ticker Panel (Simulated Real-Time Terminal) -->
+    <div class="h-8 dark-glass-panel flex items-center px-4 z-30 shrink-0 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-28 bg-gradient-to-r from-slate-900 via-slate-900 to-transparent z-10 flex items-center pl-4">
+            <span class="text-[9px] font-bold text-sky-400 font-mono tracking-widest flex items-center gap-1.5 uppercase drop-shadow-md">
+                <span class="w-1.5 h-1.5 bg-sky-400 rounded-full animate-pulse"></span> TERMINAL
+            </span>
+        </div>
+        
+        <div class="flex items-center whitespace-nowrap animate-scrolling-text font-mono text-[10px] sm:text-[11px] text-slate-300 ml-28" id="live-ticker">
+            <span class="mx-4 text-emerald-400">[DEL-04]</span> Ward 14 Groundwater level stabilized at +0.4m. 
+            <span class="mx-4 text-slate-600">///</span>
+            <span class="mx-4 text-rose-400">[BOM-12]</span> Statutory Alert: High traffic disruption at Dadar TT Circle due to road subsidence.
+            <span class="mx-4 text-slate-600">///</span>
+            <span class="mx-4 text-amber-400">[BLR-09]</span> PWD division detected 14 new surface anomalies on Outer Ring Road.
+            <span class="mx-4 text-slate-600">///</span>
+            <span class="mx-4 text-sky-400">[SYS-GOV]</span> Cross-departmental task force activated for Water & Sanitation.
+            <span class="mx-4 text-slate-600">///</span>
+            <span class="mx-4 text-emerald-400">[CHE-02]</span> Stormwater pump stations #4 and #5 operational.
+            <span class="mx-4 text-slate-600">///</span>
+            <span class="mx-4 text-rose-400">[DEL-01]</span> Resource deficit threshold breached. Immediate fund dispatch mandated.
+            <span class="mx-4 text-slate-600">///</span>
+            <span class="mx-4 text-amber-400">[KOL-18]</span> KMC sanitation drive scheduled for Ward 45.
+        </div>
+        
+        <div class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-900 to-transparent z-10"></div>
+    </div>
+
+    <!-- MoHUA Form-7 Statutory Sanction Dossier Modal -->
+    <div id="sanction-modal" class="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 hidden">
+        <div class="bg-white border border-slate-300 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden transform scale-95 transition-transform duration-200 ease-out" id="sanction-card">
+            
+            <!-- Modal Header -->
+            <div class="bg-slate-900 text-white px-5 sm:px-6 py-4 flex items-center justify-between border-b border-slate-700 shrink-0">
+                <div class="flex items-center gap-3">
+                    <img src="assets/download.png" class="w-8 h-8 rounded-full bg-white p-0.5">
+                    <div>
+                        <h4 class="font-display font-bold text-xs sm:text-sm leading-tight text-white uppercase tracking-wide">Statutory Works Clearance Memorandum</h4>
+                        <span class="text-[9px] sm:text-[10px] font-mono text-sky-400">MoHUA FORM-7 (RULE 142 COMPLIANT)</span>
+                    </div>
+                </div>
+                <button onclick="closeSanctionModal()" class="text-slate-400 hover:text-white transition-colors p-1 bg-slate-800 rounded-full">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <!-- Modal Printable Dossier Body -->
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs font-sans text-slate-800 flex-grow" id="printable-dossier">
+                
+                <div class="grid grid-cols-2 gap-4 pb-3 border-b border-slate-200 font-mono text-[10px] sm:text-[11px]">
+                    <div>
+                        <span class="text-slate-500 block text-[8px] sm:text-[9px] uppercase tracking-wider mb-0.5">Sanction Order No.</span>
+                        <strong class="text-slate-900" id="doc-sanction-id">WO/2026/DL-DJB/0984</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-[8px] sm:text-[9px] uppercase tracking-wider mb-0.5">Statutory Timestamp</span>
+                        <strong class="text-slate-900" id="doc-timestamp">30 Sep 2026, 16:30 IST</strong>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="font-bold text-sm sm:text-base text-slate-900 mb-1" id="doc-title">Arterial Water Main Restoration</h5>
+                    <p class="text-slate-600 font-mono text-[11px]" id="doc-location">Ward 14, Central District, NCT of Delhi</p>
+                </div>
+
+                <!-- Engineering BOQ Estimates Table -->
+                <div class="border border-slate-200 rounded-lg overflow-hidden mt-4">
+                    <table class="w-full text-left font-mono text-[9px] sm:text-[10px]">
+                        <thead class="bg-slate-100 border-b border-slate-200 text-slate-700">
+                            <tr>
+                                <th class="p-2 sm:p-3 font-semibold">CPWD CODE</th>
+                                <th class="p-2 sm:p-3 font-semibold">ITEM DESCRIPTION</th>
+                                <th class="p-2 sm:p-3 font-semibold">QTY</th>
+                                <th class="p-2 sm:p-3 text-right font-semibold">EST. COST</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-600" id="doc-boq-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Administrative Responsibility Matrix -->
+                <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] sm:text-[11px] mt-4">
+                    <div>
+                        <span class="text-slate-500 block text-[8px] sm:text-[9px] uppercase tracking-wider mb-0.5">Designated Urban Local Body</span>
+                        <strong class="text-slate-900" id="doc-dept">Delhi Jal Board (DJB)</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-[8px] sm:text-[9px] uppercase tracking-wider mb-0.5">Ward Executive Engineer</span>
+                        <strong class="text-slate-900" id="doc-engineer">Er. Rajesh Verma (ID: CE-4491)</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-[8px] sm:text-[9px] uppercase tracking-wider mb-0.5">Enforceable Completion Window</span>
+                        <strong class="text-rose-600" id="doc-timeline">72 Hours (Emergency Directive)</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block text-[8px] sm:text-[9px] uppercase tracking-wider mb-0.5">Total Budgetary Sanction</span>
+                        <strong class="text-emerald-700 text-sm sm:text-base" id="doc-total-cost">₹1.45 Cr</strong>
+                    </div>
+                </div>
+
+                <div class="p-3 sm:p-4 bg-amber-50 rounded-xl border border-amber-200 text-[10px] sm:text-[11px] text-amber-900 leading-relaxed font-mono mt-4">
+                    <strong>STATUTORY MANDATE:</strong> Immediate work execution authorized under Section 133 of the Municipal Public Health & Safety Code. Expenditure bookable under Central Grant Allocation Code <strong>MOHUA-GR-2026</strong>.
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0 rounded-b-2xl">
+                <button onclick="closeSanctionModal()" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors w-full sm:w-auto">
+                    Cancel
+                </button>
+                <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                    <button onclick="window.print()" class="flex-1 sm:flex-auto px-4 py-2.5 bg-slate-800 text-white rounded-lg text-[11px] sm:text-xs font-bold hover:bg-slate-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">print</span> Print
+                    </button>
+                    <button onclick="executeDispatchNotice()" class="flex-1 sm:flex-auto px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-[11px] sm:text-xs font-bold hover:bg-emerald-500 transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20">
+                        <span class="material-symbols-outlined text-[16px]">send</span> Transmit Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geospatial Engine & Operational Data Simulation -->
+    <script>
+        // --- GLOBAL VARIABLES ---
+        let map;
+        let heatLayer;
+        let currentTileLayer;
+        let currentLabelsLayer;
+        const markersGroup = L.layerGroup();
+        let selectedIncidentForDoc = null;
+        let infrastructureData = [];
+
+        // --- MAP PROVIDERS (Google Maps Free Endpoint) ---
+        const mapProviders = {
+            // Satellite + Map Labels/Streets (True Google Maps look)
+            hybrid: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            // Standard Street Map
+            street: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+        };
+
+        // --- MASSIVE MUNICIPAL DATASET GENERATOR ---
+        const baseLocations = {
+            delhi: { lat: 28.6139, lng: 77.2090, range: 0.18 },
+            mumbai: { lat: 19.0760, lng: 72.8777, range: 0.15 },
+            bangalore: { lat: 12.9716, lng: 77.5946, range: 0.15 },
+            chennai: { lat: 13.0827, lng: 80.2707, range: 0.12 },
+            kolkata: { lat: 22.5726, lng: 88.3639, range: 0.10 }
+        };
+
+        const categories = ['water', 'road', 'power', 'waste'];
+        
+        const depts = {
+            water: ['Municipal Water Board', 'Public Health Engineering (PHED)', 'Jal Board Division'],
+            road: ['Public Works Department (PWD)', 'National Highways Division', 'Municipal Road Infra Cell'],
+            power: ['State Power Distribution Co.', 'Grid Power Transmission Division'],
+            waste: ['Municipal Solid Waste Directorate', 'Public Sanitation & Hygiene Cell']
+        };
+
+        const engineers = [
+            'Er. Rajesh Verma (CE-4491)', 'Er. Suresh Pillai (SE-1192)', 'Er. Amit Shah (EE-3342)', 
+            'Er. Meera Reddy (CE-8821)', 'Er. Vikram Singh (SE-9921)', 'Er. Priya Natarajan (EE-5511)'
+        ];
+
+        const incidentTitles = {
+            water: ['Primary Water Conduit Burst', 'Stormwater Drain Inundation', 'Potable Water Distribution Failure', 'Sewer Pumping Station Failure'],
+            road: ['Critical Roadway Pothole Cluster', 'Arterial Flyover Expansion Fissure', 'Structural Road Bed Collapse', 'Culvert Bridge Degradation'],
+            power: ['Step-Down Transformer Thermal Fault', '11kV Feeder Line Earth Snag', 'Grid Relay Malfunction', 'Area Streetlight Grid Blackout'],
+            waste: ['Solid Waste Dump Leachate Seepage', 'Sanitation Facility Hazard', 'Urban Drain Clogged by Solid Waste', 'Illegal Slag Disposal']
+        };
+
+        /**
+         * Procedurally generates a realistic, massive dataset of civic issues
+         * to populate the map and action queues without needing a live backend DB.
+         */
+        function generateMunicipalDataset() {
+            infrastructureData = [];
+            let idCounter = 1001;
+            
+            for (const [city, data] of Object.entries(baseLocations)) {
+                // Bulk up to 40 nodes per city for density
+                const count = Math.floor(Math.random() * 15) + 30; 
+                
+                for(let i = 0; i < count; i++) {
+                    const cat = categories[Math.floor(Math.random() * categories.length)];
+                    const deptStr = depts[cat][Math.floor(Math.random() * depts[cat].length)];
+                    const titleStr = incidentTitles[cat][Math.floor(Math.random() * incidentTitles[cat].length)];
+                    const engStr = engineers[Math.floor(Math.random() * engineers.length)];
+                    
+                    const latOffset = (Math.random() - 0.5) * data.range;
+                    const lngOffset = (Math.random() - 0.5) * data.range;
+                    
+                    const complaints = Math.floor(Math.random() * 2200) + 60;
+                    const severity = Math.floor(Math.random() * 100);
+                    const budgetVal = (Math.random() * 6 + 0.4).toFixed(2);
+                    const budgetStr = budgetVal > 1.0 ? `₹${budgetVal} Cr` : `₹${Math.floor(budgetVal * 100)} Lakhs`;
+                    
+                    let status = 'ELEVATED';
+                    if (severity > 85) status = 'CRITICAL';
+                    else if (severity > 60) status = 'HIGH';
+
+                    infrastructureData.push({
+                        id: `${city.substring(0, 3).toUpperCase()}-${idCounter}`,
+                        city: city,
+                        lat: data.lat + latOffset,
+                        lng: data.lng + lngOffset,
+                        category: cat,
+                        title: titleStr,
+                        ward: `Municipal Ward ${Math.floor(Math.random() * 180) + 1}, ${city.charAt(0).toUpperCase() + city.slice(1)} Division`,
+                        complaints: complaints,
+                        severity: severity,
+                        budget: budgetStr,
+                        status: status,
+                        dept: deptStr,
+                        engineer: engStr
+                    });
+                    idCounter++;
+                }
+            }
+        }
+
+        // --- CORE INITIALIZATION ---
+        function initMap() {
+            generateMunicipalDataset();
+
+            // Initialize Map centered on Delhi Capital Grid
+            map = L.map('gis-map', { zoomControl: false, preferCanvas: true }).setView([28.6139, 77.2090], 11);
+            
+            // Re-position zoom controls to avoid UI overlapping
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+            // Default to Google Hybrid (Satellite + High-Contrast Labels)
+            setBaseMap('hybrid');
+
+            markersGroup.addTo(map);
+            renderGISLayers();
+            renderHotspotSidebar();
+            
+            startLiveSimulation();
+        }
+
+        /**
+         * Toggles between Satellite+Labels and standard Street Map.
+         */
+        function setBaseMap(mode) {
+            if (currentTileLayer) map.removeLayer(currentTileLayer);
+            
+            currentTileLayer = L.tileLayer(mapProviders[mode], {
+                attribution: '&copy; Google Maps Infrastructure Data',
+                maxZoom: 20
+            }).addTo(map);
+
+            const btnStreet = document.getElementById('btn-street');
+            const btnHybrid = document.getElementById('btn-hybrid');
+
+            if (mode === 'street') {
+                btnStreet.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white flex items-center gap-1.5 shadow-sm";
+                btnHybrid.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-transparent border border-transparent";
+            } else {
+                btnHybrid.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white flex items-center gap-1.5 shadow-sm";
+                btnStreet.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-transparent border border-transparent";
+            }
+        }
+
+        function getCategoryColor(cat) {
+            switch(cat) {
+                case 'water': return '#0284c7';
+                case 'road': return '#d97706';
+                case 'power': return '#059669';
+                case 'waste': return '#e11d48';
+                default: return '#475569';
+            }
+        }
+
+        function getCategoryIcon(cat) {
+            switch(cat) {
+                case 'water': return 'water_drop';
+                case 'road': return 'add_road';
+                case 'power': return 'bolt';
+                case 'waste': return 'delete';
+                default: return 'report';
+            }
+        }
+
+        // --- MAP LAYER RENDERING ---
+        function renderGISLayers() {
+            markersGroup.clearLayers();
+            const heatPoints = [];
+
+            const isWater = document.getElementById('layer-water').checked;
+            const isRoad = document.getElementById('layer-road').checked;
+            const isPower = document.getElementById('layer-power').checked;
+            const isWaste = document.getElementById('layer-waste').checked;
+
+            infrastructureData.forEach(item => {
+                const show = (item.category === 'water' && isWater) || 
+                             (item.category === 'road' && isRoad) || 
+                             (item.category === 'power' && isPower) || 
+                             (item.category === 'waste' && isWaste);
+
+                if (show) {
+                    heatPoints.push([item.lat, item.lng, item.severity / 100]);
+
+                    const color = getCategoryColor(item.category);
+                    const iconType = getCategoryIcon(item.category);
+                    const pulse = item.severity > 85 ? 'pulse-pin shadow-[0_0_15px_' + color + ']' : 'shadow-md';
+
+                    const markerHtml = `
+                        <div class="relative flex items-center justify-center">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white border-2 border-white ${pulse}" style="background-color: ${color}">
+                                <span class="material-symbols-outlined text-[15px]">${iconType}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    const customIcon = L.divIcon({
+                        html: markerHtml,
+                        className: 'custom-pin',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    const marker = L.marker([item.lat, item.lng], { icon: customIcon });
+
+                    const popupHtml = `
+                        <div class="p-3 font-sans w-64 bg-white">
+                            <div class="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200">
+                                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-white uppercase" style="background:${color}">${item.category}</span>
+                                <span class="text-[9px] font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">DEFICIT SCORE: ${item.severity}</span>
+                            </div>
+                            <h4 class="font-bold text-xs text-slate-900 leading-tight mb-1">${item.title}</h4>
+                            <p class="text-[10px] text-slate-500 font-mono mb-2 truncate">${item.ward}</p>
+                            
+                            <div class="grid grid-cols-2 gap-1.5 bg-slate-50 p-2 rounded text-[10px] font-mono mb-2 border border-slate-200">
+                                <div><span class="text-slate-400 block text-[8px]">CITIZEN REPORTS</span><strong class="text-slate-800 block">${item.complaints.toLocaleString()}</strong></div>
+                                <div><span class="text-slate-400 block text-[8px]">EST. BUDGET</span><strong class="text-emerald-700 block">${item.budget}</strong></div>
+                            </div>
+
+                            <button onclick="openSanctionModal('${item.id}')" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm border border-slate-700 mt-2">
+                                <span class="material-symbols-outlined text-[14px]">fact_check</span> Prepare Sanction Dossier
+                            </button>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupHtml, { autoPanPadding: [40, 40] });
+                    markersGroup.addLayer(marker);
+                }
+            });
+
+            if (heatLayer) map.removeLayer(heatLayer);
+            if (document.getElementById('layer-heatmap').checked && heatPoints.length > 0) {
+                heatLayer = L.heatLayer(heatPoints, { 
+                    radius: 35, blur: 24, maxZoom: 16, max: 1.0, 
+                    gradient: { 0.4: '#0284c7', 0.65: '#f59e0b', 0.85: '#e11d48', 1.0: '#881337' } 
+                }).addTo(map);
+            }
+        }
+
+        function toggleLayer() { 
+            renderGISLayers(); 
+            renderHotspotSidebar(); 
+        }
+
+        // --- SIDEBAR (QUEUE) RENDERING ---
+        function renderHotspotSidebar() {
+            const container = document.getElementById('hotspots-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const isWater = document.getElementById('layer-water').checked;
+            const isRoad = document.getElementById('layer-road').checked;
+            const isPower = document.getElementById('layer-power').checked;
+            const isWaste = document.getElementById('layer-waste').checked;
+
+            const sorted = infrastructureData.filter(item => {
+                return (item.category === 'water' && isWater) || 
+                       (item.category === 'road' && isRoad) || 
+                       (item.category === 'power' && isPower) || 
+                       (item.category === 'waste' && isWaste);
+            }).sort((a, b) => b.severity - a.severity).slice(0, 18);
+
+            sorted.forEach((item, index) => {
+                const color = getCategoryColor(item.category);
+                
+                let rankBadge = "bg-slate-100 text-slate-700 border-slate-300";
+                if (index === 0) rankBadge = "bg-rose-100 text-rose-800 border-rose-300 font-extrabold";
+                else if (index < 3) rankBadge = "bg-amber-100 text-amber-800 border-amber-300";
+
+                container.innerHTML += `
+                    <div onclick="focusPoint(${item.lat}, ${item.lng}); closeAllPanelsOnMobile();" class="p-3 bg-white hover:bg-slate-50 border border-slate-200 hover:border-sky-400 rounded-xl transition-all cursor-pointer shadow-sm relative group overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl" style="background-color: ${color}"></div>
+                        <div class="flex items-center justify-between gap-1 mb-1.5 pl-2.5">
+                            <span class="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded border uppercase ${rankBadge}">PRIORITY #${index + 1}</span>
+                            <span class="text-[9px] sm:text-[10px] font-mono font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">INDEX: ${item.severity}</span>
+                        </div>
+                        <h4 class="font-bold text-[11px] sm:text-xs text-slate-900 leading-snug group-hover:text-sky-600 transition-colors pl-2.5 truncate">${item.title}</h4>
+                        <p class="text-[9px] sm:text-[10px] text-slate-500 font-mono pl-2.5 truncate mt-0.5">${item.ward}</p>
+                        
+                        <div class="flex items-center justify-between text-[10px] sm:text-[11px] font-mono mt-2.5 pt-2 border-t border-slate-100 pl-2.5">
+                            <span class="text-slate-500 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">groups</span> ${item.complaints.toLocaleString()}</span>
+                            <strong class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">${item.budget}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function focusPoint(lat, lng) {
+            map.flyTo([lat, lng], 16, { animate: true, duration: 1.2 });
+        }
+
+        function changeRegion(region) {
+            const data = baseLocations[region] || baseLocations['delhi'];
+            if (region === 'all') {
+                map.flyTo([22.5937, 78.9629], 5, { animate: true, duration: 1.8 });
+            } else {
+                map.flyTo([data.lat, data.lng], 11, { animate: true, duration: 1.2 });
+            }
+        }
+
+        // --- STATUTORY DOSSIER MODAL WORKFLOW ---
+        function openSanctionModal(id) {
+            const item = infrastructureData.find(x => x.id === id);
+            if (!item) return;
+            selectedIncidentForDoc = item;
+
+            document.getElementById('doc-sanction-id').innerText = `WO/2026/${item.id}`;
+            document.getElementById('doc-title').innerText = item.title;
+            document.getElementById('doc-location').innerText = `${item.ward}, ${item.city.toUpperCase()} DIVISION`;
+            document.getElementById('doc-dept').innerText = item.dept;
+            document.getElementById('doc-engineer').innerText = item.engineer;
+            document.getElementById('doc-total-cost').innerText = item.budget;
+            
+            // Format current date and time
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            document.getElementById('doc-timestamp').innerText = `${dateStr}, ${timeStr} IST`;
+
+            // Generate Itemized CPWD BOQ Breakdown based on sector
+            const boqBody = document.getElementById('doc-boq-body');
+            boqBody.innerHTML = '';
+
+            let boqItems = [];
+            if (item.category === 'water') {
+                boqItems = [
+                    { code: 'CPWD-14.2.1', desc: 'Excavation & trench safety casing in all soil strata', qty: '420 m³', cost: '₹14.20 Lakhs' },
+                    { code: 'CPWD-18.4.2', desc: 'Heavy-gauge ductile iron feeder pipes (Class K-9)', qty: '120 meters', cost: '₹58.60 Lakhs' },
+                    { code: 'CPWD-07.1.1', desc: 'Hydraulic pressure test & municipal disinfection cycle', qty: '1 Lump-sum', cost: '₹8.40 Lakhs' }
+                ];
+            } else if (item.category === 'road') {
+                boqItems = [
+                    { code: 'IRC-37/2018', desc: 'Cold milling of deteriorated bituminous surface layer', qty: '1,450 m²', cost: '₹22.10 Lakhs' },
+                    { code: 'CPWD-05.8.4', desc: 'Dense Bituminous Macadam (DBM) binder course laying', qty: '380 tonnes', cost: '₹48.90 Lakhs' },
+                    { code: 'IRC-SP-98', desc: 'Thermoplastic reflective road markings & joint sealing', qty: '850 meters', cost: '₹6.20 Lakhs' }
+                ];
+            } else if (item.category === 'power') {
+                boqItems = [
+                    { code: 'CEA-2023-TR', desc: 'Replacement of damaged 11kV/415V distribution transformer', qty: '2 Units', cost: '₹62.00 Lakhs' },
+                    { code: 'CPWD-ELEC-4', desc: 'XLPE insulated armored aluminum cabling replacement', qty: '650 meters', cost: '₹24.50 Lakhs' },
+                    { code: 'CPWD-ELEC-9', desc: 'Earthing conductor arrays & lightning arrester calibration', qty: '4 Sets', cost: '₹4.80 Lakhs' }
+                ];
+            } else {
+                boqItems = [
+                    { code: 'SWM-RULES-16', desc: 'Excavation, bio-mining and bio-remediation of waste mass', qty: '1,800 tonnes', cost: '₹34.00 Lakhs' },
+                    { code: 'CPWD-SAN-02', desc: 'High-density polyethylene (HDPE) leachate drainage barrier', qty: '920 m²', cost: '₹18.40 Lakhs' },
+                    { code: 'CPWD-SAN-09', desc: 'Microbial deodorization sprays & vector control cordon', qty: 'Perimeter', cost: '₹4.60 Lakhs' }
+                ];
+            }
+
+            boqItems.forEach(b => {
+                boqBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-2 sm:p-3 font-bold text-slate-800 border-r border-slate-100">${b.code}</td>
+                        <td class="p-2 sm:p-3 border-r border-slate-100">${b.desc}</td>
+                        <td class="p-2 sm:p-3 border-r border-slate-100">${b.qty}</td>
+                        <td class="p-2 sm:p-3 text-right font-bold text-slate-800">${b.cost}</td>
+                    </tr>
+                `;
+            });
+
+            // Show modal with animation
+            const modal = document.getElementById('sanction-modal');
+            const card = document.getElementById('sanction-card');
+            modal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating scale
+            setTimeout(() => {
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeSanctionModal() {
+            const modal = document.getElementById('sanction-modal');
+            const card = document.getElementById('sanction-card');
+            
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                selectedIncidentForDoc = null;
+            }, 200);
+        }
+
+        function executeDispatchNotice() {
+            if (!selectedIncidentForDoc) return;
+            alert(`[STATUTORY TRANSMISSION COMPLETE]\n\nSanction Order WO/2026/${selectedIncidentForDoc.id} formally served to ${selectedIncidentForDoc.dept}.\nField Enforcement Officer (${selectedIncidentForDoc.engineer}) notified via SMS and official portal under statutory priority dispatch protocol.`);
+            closeSanctionModal();
+        }
+
+        // --- OFFICIAL EXCEL CSV EXPORT ENGINE ---
+        function exportPriorityManifestCSV() {
+            // Sort by severity descending to prioritize highly critical items first
+            const sorted = [...infrastructureData].sort((a, b) => b.severity - a.severity);
+            
+            // Standard Municipal Ledger Headers
+            let csvContent = "Priority Rank,Work Order ID,Municipal Division,Sector,Statutory Incident,Jurisdiction Ward,Grievance Volume,Deficit Score (0-100),Estimated Budget,Assigned Department,Assigned Engineer,Status\n";
+            
+            // Map rows and escape commas inside text fields to prevent CSV column breakage
+            sorted.forEach((row, i) => {
+                const safeTitle = `"${row.title.replace(/"/g, '""')}"`;
+                const safeWard = `"${row.ward.replace(/"/g, '""')}"`;
+                const safeDept = `"${row.dept.replace(/"/g, '""')}"`;
+                const safeEng = `"${row.engineer.replace(/"/g, '""')}"`;
+                const safeBudget = `"${row.budget}"`;
+                
+                csvContent += `${i + 1},WO/2026/${row.id},${row.city.toUpperCase()},${row.category.toUpperCase()},${safeTitle},${safeWard},${row.complaints},${row.severity},${safeBudget},${safeDept},${safeEng},${row.status}\n`;
+            });
+
+            // Add UTF-8 Byte Order Mark (BOM) to ensure Microsoft Excel opens it correctly without encoding corruption
+            const bom = "\uFEFF"; 
+            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `National_Public_Works_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- REAL-TIME DATA SIMULATION ENGINE ---
+        function startLiveSimulation() {
+            // Constant background polling every 3.5 seconds
+            setInterval(() => {
+                // 1. Target a random node to fluctuate
+                const targetIdx = Math.floor(Math.random() * infrastructureData.length);
+                const item = infrastructureData[targetIdx];
+                
+                // Naturally increase grievance complaints
+                item.complaints += Math.floor(Math.random() * 8) + 1;
+                
+                // Fluctuate severity slightly
+                const flux = (Math.random() - 0.4) * 3;
+                item.severity = Math.min(100, Math.max(10, Math.round(item.severity + flux)));
+                
+                if (item.severity > 85) item.status = 'CRITICAL';
+                else if (item.severity > 60) item.status = 'HIGH';
+                else item.status = 'ELEVATED';
+
+                // 2. Refresh the UI silently without disrupting user interaction
+                renderGISLayers();
+                renderHotspotSidebar();
+                
+                // 3. Update Header KPIs based on new data
+                const totalGrievances = infrastructureData.reduce((acc, curr) => acc + curr.complaints, 0);
+                document.getElementById('kpi-grievances').innerText = totalGrievances.toLocaleString();
+                
+                const avgSev = infrastructureData.reduce((acc, curr) => acc + curr.severity, 0) / infrastructureData.length;
+                const deficitEl = document.getElementById('kpi-deficit');
+                if (deficitEl) {
+                    const badge = avgSev > 60 ? '<span class="text-[8px] px-1 py-0.5 bg-rose-500/20 rounded border border-rose-500/50 text-rose-300">CRITICAL</span>' : '<span class="text-[8px] px-1 py-0.5 bg-amber-500/20 rounded border border-amber-500/50 text-amber-300">ELEVATED</span>';
+                    deficitEl.innerHTML = `${(avgSev / 2).toFixed(1)}% ${badge}`;
+                }
+            }, 3500);
+        }
+
+        // --- MOBILE DRAWER LOGIC ---
+        function toggleMobilePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const overlay = document.getElementById('mobile-overlay');
+            
+            // Close other panels first
+            if (panelId === 'left-panel') {
+                document.getElementById('right-panel').classList.add('translate-x-full');
+                panel.classList.toggle('-translate-x-full');
+            } else {
+                document.getElementById('left-panel').classList.add('-translate-x-full');
+                panel.classList.toggle('translate-x-full');
+            }
+
+            // Check if any panel is open to toggle overlay
+            const isLeftOpen = !document.getElementById('left-panel').classList.contains('-translate-x-full');
+            const isRightOpen = !document.getElementById('right-panel').classList.contains('translate-x-full');
+
+            if (isLeftOpen || isRightOpen) {
+                overlay.classList.add('active');
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function closeAllPanels() {
+            if (window.innerWidth < 768) {
+                document.getElementById('left-panel').classList.add('-translate-x-full');
+                document.getElementById('right-panel').classList.add('translate-x-full');
+                document.getElementById('mobile-overlay').classList.remove('active');
+            }
+        }
+
+        function closeAllPanelsOnMobile() {
+            if (window.innerWidth < 768) {
+                closeAllPanels();
+            }
+        }
+
+        // Boot Application
+        window.onload = initMap;
+    </script>
+</body>
+</html>

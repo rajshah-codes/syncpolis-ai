@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncPolis AI - Secure Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800&family=Geist:wght@400;500&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+            background-color: #040914;
+            /* Creates the isometric tech grid background from your image */
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.1) 0%, transparent 60%),
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            background-position: center center;
+        }
+        .glass-card {
+            background: rgba(11, 18, 33, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .fingerprint-glow {
+            box-shadow: 0 0 25px rgba(34, 211, 238, 0.4);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.2); }
+            100% { box-shadow: 0 0 35px rgba(34, 211, 238, 0.6); }
+        }
+    </style>
+</head>
+<body class="min-h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden text-slate-300">
+
+    <!-- Background Tech Accents -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-cyan-500/10 rounded-full pointer-events-none"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-cyan-500/20 rounded-full pointer-events-none"></div>
+
+    <div class="z-10 w-full max-w-md flex flex-col items-center animate-[stream-reveal_0.5s_ease-out_forwards]">
+        
+        <!-- Header -->
+        <h1 class="text-3xl md:text-4xl font-extrabold text-white font-['Space_Grotesk',sans-serif] mb-1 tracking-tight">
+            SyncPolis <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">AI</span>
+        </h1>
+        <p class="text-xs text-slate-400 font-label-tech uppercase tracking-[0.2em] mb-8">GovTech Command Platform.</p>
+
+        <!-- Glowing Fingerprint Icon -->
+        <div class="w-16 h-16 rounded-full border border-cyan-500/50 flex items-center justify-center mb-8 fingerprint-glow relative">
+            <div class="absolute inset-2 rounded-full border border-cyan-400/30"></div>
+            <span class="material-symbols-outlined text-cyan-400 text-3xl">fingerprint</span>
+        </div>
+
+        <!-- Login Card -->
+        <div class="glass-card w-full rounded-2xl p-6 sm:p-8 flex flex-col gap-4">
+            
+            <!-- OAuth Buttons -->
+            <button class="w-full bg-white hover:bg-slate-200 text-slate-900 font-bold py-3 rounded-xl flex items-center justify-center gap-3 transition-colors text-sm shadow-md">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
+                Continue with Google
+            </button>
+
+            <div class="grid grid-cols-2 gap-3 mt-1">
+                <button class="w-full bg-[#020617]/50 hover:bg-[#020617] border border-white/10 text-slate-300 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-xs font-semibold">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zm12.6 0H12.6V0H24v11.4z"/></svg>
+                    Microsoft
+                </button>
+                <button class="w-full bg-[#020617]/50 hover:bg-[#020617] border border-white/10 text-slate-300 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-xs font-semibold">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub
+                </button>
+            </div>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-3 my-3">
+                <div class="h-px bg-white/10 flex-grow"></div>
+                <span class="text-[9px] font-label-tech text-slate-500 uppercase tracking-widest">Or Email Login</span>
+                <div class="h-px bg-white/10 flex-grow"></div>
+            </div>
+
+            <!-- Form Inputs -->
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="text-[10px] text-slate-400 font-label-tech mb-1 block pl-1">Email Address</label>
+                    <input type="email" placeholder="alex@sterling.com" class="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(34,211,238,0.2)] transition-all">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] text-slate-400 font-label-tech mb-1 block pl-1">Password</label>
+                    <div class="relative">
+                        <input type="password" value="********" class="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_10px_rgba(34,211,238,0.2)] transition-all">
+                        <button class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">visibility_off</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mt-1 px-1">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="w-4 h-4 rounded border border-white/20 bg-[#020617] group-hover:border-cyan-400 flex items-center justify-center transition-colors">
+                            <span class="w-2 h-2 bg-cyan-400 rounded-sm"></span>
+                        </div>
+                        <span class="text-xs text-slate-300">Remember Me</span>
+                    </label>
+                    <a href="#" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Forgot Password?</a>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <button onclick="window.location.href='new_new_index.html'" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_25px_rgba(37,99,235,0.6)] transition-all mt-2 text-sm">
+                Sign In to Portal
+            </button>
+
+            <button class="w-full bg-transparent border border-white/10 hover:bg-white/5 text-slate-300 font-bold py-3.5 rounded-xl transition-colors text-sm">
+                Send Magic Link
+            </button>
+
+            <div class="text-center mt-4">
+                <span class="text-xs text-slate-400">New to SyncPolis? </span>
+                <a href="#" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition-colors">Create Account</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

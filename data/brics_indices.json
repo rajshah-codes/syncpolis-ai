@@ -1,0 +1,42 @@
+[
+  {
+    "city": "Mumbai",
+    "country": "India",
+    "water_index": 62,
+    "road_index": 45,
+    "power_stability": 88,
+    "pop_density_sqkm": 21000
+  },
+  {
+    "city": "São Paulo",
+    "country": "Brazil",
+    "water_index": 78,
+    "road_index": 55,
+    "power_stability": 82,
+    "pop_density_sqkm": 8100
+  },
+  {
+    "city": "Shanghai",
+    "country": "China",
+    "water_index": 91,
+    "road_index": 89,
+    "power_stability": 95,
+    "pop_density_sqkm": 3800
+  },
+  {
+    "city": "Moscow",
+    "country": "Russia",
+    "water_index": 85,
+    "road_index": 70,
+    "power_stability": 92,
+    "pop_density_sqkm": 4900
+  },
+  {
+    "city": "Johannesburg",
+    "country": "South Africa",
+    "water_index": 55,
+    "road_index": 62,
+    "power_stability": 40,
+    "pop_density_sqkm": 2900
+  }
+]

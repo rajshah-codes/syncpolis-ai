@@ -1,0 +1,432 @@
+
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncPolis AI - Secure Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800&family=Geist:wght@400;500&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- Load App Multilingual Engine -->
+    <script src="js/app.js"></script>
+
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #040914;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.1) 0%, transparent 60%),
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            background-position: center center;
+        }
+        .glass-card {
+            background: rgba(11, 18, 33, 0.94);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 0 50px rgba(0, 229, 255, 0.1);
+        }
+        .fingerprint-glow {
+            box-shadow: 0 0 25px rgba(34, 211, 238, 0.4);
+            animation: pulse-glow 3s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.2); }
+            100% { box-shadow: 0 0 35px rgba(34, 211, 238, 0.6); }
+        }
+        @keyframes wave {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        .wave-1 { animation: wave 2.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        .wave-2 { animation: wave 2.5s cubic-bezier(0, 0, 0.2, 1) infinite 0.8s; }
+        .wave-3 { animation: wave 2.5s cubic-bezier(0, 0, 0.2, 1) infinite 1.6s; }
+        .wave-border { border: 2px solid #00E5FF; }
+        .icon-color { color: #00E5FF; }
+        
+        .login-input { background-color: #1e293b; border: 1px solid #475569; color: #ffffff; }
+        .login-input:focus { border-color: #00E5FF; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); outline: none; background-color: #0f172a;}
+    </style>
+</head>
+<body class="min-h-screen w-full flex flex-col items-center justify-center py-10 px-4 relative overflow-y-auto text-slate-300">
+
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-cyan-500/10 rounded-full pointer-events-none"></div>
+
+    <div class="z-10 w-full max-w-md flex flex-col items-center my-auto">
+        <div class="glass-card w-full rounded-2xl p-6 sm:p-8 flex flex-col gap-4 relative">
+            <button onclick="window.location.replace('new_new_index.html')" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-20 p-1" title="Close">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+
+            <!-- Brand Header -->
+            <div class="text-center mb-4 mt-1">
+                <h1 id="form-title" class="font-['Outfit',sans-serif] text-3xl font-black text-white tracking-wide mb-1" data-i18n="login_title">
+                    SyncPolis <span class="text-cyan-400">AI</span>
+                </h1>
+                <p id="form-subtitle" class="text-[10px] text-gray-400 font-bold tracking-[0.2em] uppercase leading-relaxed px-2" data-i18n="login_sub">Institutional Grade Intelligence.</p>
+            </div>
+
+            <!-- Concentric Glowing Fingerprint -->
+            <div class="relative w-20 h-20 mx-auto mb-4 flex items-center justify-center shrink-0">
+                <div class="absolute inset-0 rounded-full wave-border wave-1"></div>
+                <div class="absolute inset-0 rounded-full wave-border wave-2"></div>
+                <div class="absolute inset-0 rounded-full wave-border wave-3"></div>
+                <span class="material-symbols-outlined text-5xl icon-color relative z-10 drop-shadow-[0_0_15px_rgba(0,229,255,0.8)] fingerprint-glow rounded-full">fingerprint</span>
+            </div>
+            
+            <div id="status-message" class="hidden mb-2 text-xs font-bold text-center px-4 py-3 rounded-xl border transition-all break-words leading-relaxed"></div>
+
+            <!-- Single Sign-On Buttons -->
+            <div id="oauth-section" class="flex flex-col gap-3 mb-1">
+                <button onclick="simulateOAuth('Google')" type="button" class="w-full bg-white hover:bg-slate-200 text-slate-900 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors text-sm shadow-md whitespace-normal leading-snug">
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
+                    <span data-i18n="login_google" class="text-center">Continue with Google</span>
+                </button>
+                <button onclick="simulateOAuth('Microsoft')" type="button" class="w-full bg-[#2F2F2F] hover:bg-[#3f3f3f] border border-gray-700 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors text-sm shadow-md whitespace-normal leading-snug">
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+                    <span data-i18n="login_ms" class="text-center">Microsoft</span>
+                </button>
+
+                <div class="flex items-center gap-3 my-2">
+                    <div class="h-px bg-white/10 flex-grow"></div>
+                    <span id="divider-text" class="text-[9px] font-mono text-slate-500 uppercase tracking-widest text-center" data-i18n="login_or_email">OR EMAIL LOGIN</span>
+                    <div class="h-px bg-white/10 flex-grow"></div>
+                </div>
+            </div>
+
+            <!-- Credentials Form -->
+            <form id="auth-form" onsubmit="processAuth(event)" class="flex flex-col gap-4">
+                <div id="name-container" class="hidden">
+                    <label class="text-[11px] font-bold text-gray-400 mb-1.5 ml-1 block" data-i18n="lbl_name">Full Name</label>
+                    <input type="text" id="fullname" placeholder="Alex Sterling" class="login-input w-full rounded-xl px-4 py-3 text-sm transition-all font-sans">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-gray-400 mb-1.5 ml-1 block" data-i18n="lbl_email">Email Address</label>
+                    <input type="email" id="email" required placeholder="alex@syncpolis.com" class="login-input w-full rounded-xl px-4 py-3 text-sm transition-all text-white font-sans">
+                </div>
+                
+                <div id="password-container" class="relative">
+                    <label class="text-[11px] font-bold text-gray-400 mb-1.5 ml-1 block" data-i18n="lbl_pwd">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="login-input w-full rounded-xl px-4 py-3 text-sm transition-all">
+                    <button type="button" onclick="togglePassword()" class="absolute right-4 top-[36px] text-slate-500 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-[18px]" id="eye-icon">visibility_off</span>
+                    </button>
+                </div>
+
+                <div id="login-options" class="flex items-center justify-between mt-1 px-1">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" checked class="rounded border-gray-500 bg-[#050914] text-cyan-500 focus:ring-0"> 
+                        <span class="text-xs text-slate-300" data-i18n="lbl_rem">Remember Me</span>
+                    </label>
+                    <button type="button" onclick="toggleResetMode()" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-bold" data-i18n="lbl_forgot">Forgot Password?</button>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all mt-1 text-sm uppercase tracking-widest flex items-center justify-center text-center whitespace-normal leading-snug" data-i18n="btn_sign_portal">
+                    SIGN IN TO PORTAL
+                </button>
+                
+                <div id="toggle-auth-mode" class="text-center mt-2 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-1.5 leading-normal">
+                    <span id="toggle-text" data-i18n="txt_no_acc">Don't have an account?</span> 
+                    <button type="button" onclick="toggleSignUpMode()" id="toggle-btn" class="text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline-offset-2 hover:underline" data-i18n="auth_create">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Exact Replica OAuth Popup -->
+    <div id="mock-oauth-overlay" class="fixed inset-0 z-[100] bg-[#020617]/85 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl scale-95 transition-transform duration-300" id="oauth-card">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-200">
+                <span class="text-xs font-semibold text-gray-700 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px] text-gray-500">lock</span> 
+                    <span id="oauth-header-text">Sign in</span>
+                </span>
+                <button onclick="closeMockOAuth()" class="text-gray-400 hover:text-gray-700 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+            <div class="p-6 text-center text-gray-900">
+                <div id="oauth-logo-container" class="w-10 h-10 mx-auto mb-3 flex items-center justify-center"></div>
+                <h2 id="oauth-title" class="text-xl font-bold mb-1">Sign in</h2>
+                <p class="text-xs text-gray-600 mb-6 font-medium">to continue to SyncPolis AI</p>
+
+                <div onclick="executeOAuthLogin()" class="flex items-center gap-3 p-3.5 border border-gray-300 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors text-left">
+                    <div id="oauth-avatar" class="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold text-lg shrink-0"></div>
+                    <div class="flex-grow min-w-0">
+                        <div id="oauth-name" class="font-bold text-sm text-gray-900 truncate"></div>
+                        <div id="oauth-email" class="text-xs text-gray-500 truncate font-sans"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isSignUpMode = false;
+        let isResetMode = false;
+
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get('mode') === 'signup') toggleSignUpMode();
+        }
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+            document.getElementById('eye-icon').innerText = input.type === 'password' ? 'visibility_off' : 'visibility';
+        }
+
+        function updateLoginDynamicText() {
+            const submitBtn = document.getElementById('submit-btn');
+            const toggleText = document.getElementById('toggle-text');
+            const toggleBtn = document.getElementById('toggle-btn');
+            const dividerText = document.getElementById('divider-text');
+            
+            const l = currentLang;
+            const dict = translations[l] || translations.en;
+
+            if (isResetMode) {
+                submitBtn.innerText = dict.btn_reset;
+                const backBtn = document.getElementById('back-btn');
+                if (backBtn) backBtn.innerText = dict.btn_back;
+            } else if (isSignUpMode) {
+                submitBtn.innerText = dict.btn_create_acc;
+                toggleText.innerText = dict.txt_has_acc;
+                toggleBtn.innerText = dict.auth_signin;
+                dividerText.innerText = dict.login_or_signup;
+            } else {
+                submitBtn.innerText = dict.btn_sign_portal;
+                toggleText.innerText = dict.txt_no_acc;
+                toggleBtn.innerText = dict.auth_create;
+                dividerText.innerText = dict.login_or_email;
+            }
+        }
+
+        function toggleSignUpMode() {
+            isSignUpMode = !isSignUpMode;
+            const nameCont = document.getElementById('name-container');
+            const submitBtn = document.getElementById('submit-btn');
+            const toggleBtn = document.getElementById('toggle-btn');
+
+            if (isSignUpMode) {
+                nameCont.classList.remove('hidden');
+                document.getElementById('fullname').required = true;
+                submitBtn.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all mt-1 text-sm uppercase tracking-widest flex items-center justify-center text-center whitespace-normal leading-snug";
+                toggleBtn.className = "text-cyan-400 hover:text-cyan-300 font-bold transition-colors underline-offset-2 hover:underline";
+            } else {
+                nameCont.classList.add('hidden');
+                document.getElementById('fullname').required = false;
+                submitBtn.className = "w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all mt-1 text-sm uppercase tracking-widest flex items-center justify-center text-center whitespace-normal leading-snug";
+                toggleBtn.className = "text-emerald-400 hover:text-emerald-300 font-bold transition-colors underline-offset-2 hover:underline";
+            }
+            updateLoginDynamicText();
+            document.getElementById('status-message').classList.add('hidden');
+        }
+
+        function toggleResetMode() {
+            isResetMode = !isResetMode;
+            const pwdCont = document.getElementById('password-container');
+            const oauthSec = document.getElementById('oauth-section');
+            const toggleAuth = document.getElementById('toggle-auth-mode');
+            const options = document.getElementById('login-options');
+            const title = document.getElementById('form-title');
+            const subtitle = document.getElementById('form-subtitle');
+            const dict = translations[currentLang] || translations.en;
+
+            if (isResetMode) {
+                pwdCont.classList.add('hidden');
+                oauthSec.classList.add('hidden');
+                toggleAuth.classList.add('hidden');
+                options.classList.add('hidden');
+                document.getElementById('password').required = false;
+                
+                title.innerText = dict.reset_title;
+                subtitle.innerText = dict.reset_sub;
+                
+                if (!document.getElementById('back-btn')) {
+                    const backBtn = document.createElement('button');
+                    backBtn.id = 'back-btn';
+                    backBtn.type = 'button';
+                    backBtn.onclick = toggleResetMode;
+                    backBtn.className = "w-full mt-3 bg-transparent border border-white/20 text-slate-300 hover:bg-white/5 font-bold text-xs py-3.5 rounded-xl transition-colors uppercase tracking-widest flex items-center justify-center";
+                    document.getElementById('auth-form').appendChild(backBtn);
+                }
+            } else {
+                pwdCont.classList.remove('hidden');
+                oauthSec.classList.remove('hidden');
+                toggleAuth.classList.remove('hidden');
+                options.classList.remove('hidden');
+                document.getElementById('password').required = true;
+                
+                title.innerHTML = dict.login_title;
+                subtitle.innerText = dict.login_sub;
+                
+                const backBtn = document.getElementById('back-btn');
+                if (backBtn) backBtn.remove();
+            }
+            updateLoginDynamicText();
+            document.getElementById('status-message').classList.add('hidden');
+        }
+
+        function showMessage(msg, type) {
+            const msgBox = document.getElementById('status-message');
+            msgBox.innerHTML = msg;
+            msgBox.classList.remove('hidden');
+            if (type === 'error') {
+                msgBox.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+                msgBox.style.color = '#fca5a5';
+                msgBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            } else if (type === 'success') {
+                msgBox.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
+                msgBox.style.color = '#6ee7b7';
+                msgBox.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            }
+        }
+
+        function processAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value;
+            const nameInput = document.getElementById('fullname');
+            const submitBtn = document.getElementById('submit-btn');
+            const dict = translations[currentLang] || translations.en;
+
+            if (isResetMode) {
+                submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin align-middle mr-1 text-[16px]">refresh</span> PROCESSING...';
+                setTimeout(() => {
+                    const rawData = localStorage.getItem('syncpolis_user_' + email);
+                    if (rawData) {
+                        let recoveredPass = "";
+                        try {
+                            recoveredPass = JSON.parse(rawData).pass;
+                        } catch(err) {
+                            recoveredPass = rawData;
+                        }
+                        showMessage(`Recovery Key: <strong class="text-white tracking-widest px-2 py-0.5 bg-black/40 rounded border border-white/20">${recoveredPass}</strong>`, "success");
+                    } else {
+                        showMessage(dict.auth_err_notfound, "error");
+                    }
+                    submitBtn.innerText = dict.btn_reset;
+                }, 600);
+                return;
+            }
+
+            submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin align-middle mr-1 text-[16px]">refresh</span> PROCESSING...';
+
+            setTimeout(() => {
+                if (isSignUpMode) {
+                    if (localStorage.getItem('syncpolis_user_' + email)) {
+                        showMessage(dict.auth_err_exists, "error");
+                        submitBtn.innerText = dict.btn_create_acc;
+                        return;
+                    }
+
+                    const fullname = nameInput.value.trim() || 'Citizen User';
+                    localStorage.setItem('syncpolis_user_' + email, JSON.stringify({ pass: pass, name: fullname }));
+                    showMessage(dict.auth_succ_created, "success");
+                    setTimeout(() => {
+                        toggleSignUpMode();
+                    }, 1400);
+                } else {
+                    const rawData = localStorage.getItem('syncpolis_user_' + email);
+                    if (!rawData) {
+                        showMessage(dict.auth_err_notfound, "error");
+                        submitBtn.innerText = dict.btn_sign_portal;
+                        return;
+                    }
+
+                    let storedPass = rawData;
+                    try {
+                        const parsed = JSON.parse(rawData);
+                        storedPass = parsed.pass;
+                    } catch(err) {}
+
+                    if (storedPass === pass) {
+                        localStorage.setItem('syncpolis_active_session', email);
+                        window.location.replace('new_new_index.html');
+                    } else {
+                        showMessage(dict.auth_err_invalid, "error");
+                        submitBtn.innerText = dict.btn_sign_portal;
+                    }
+                }
+            }, 700);
+        }
+
+        function simulateOAuth(provider) {
+            const email = document.getElementById('email').value.trim();
+            const dict = translations[currentLang] || translations.en;
+            
+            if (!email) {
+                showMessage(dict.auth_err_email, "error");
+                return;
+            }
+
+            const rawData = localStorage.getItem('syncpolis_user_' + email);
+            if (!rawData) {
+                showMessage(dict.auth_err_notfound, "error");
+                return;
+            }
+
+            let userName = "Nodal Administrator";
+            try {
+                const parsed = JSON.parse(rawData);
+                if (parsed.name) userName = parsed.name;
+            } catch (e) { }
+
+            openMockOAuth(provider, email, userName);
+        }
+
+        function openMockOAuth(provider, email, name) {
+            const headerText = document.getElementById('oauth-header-text');
+            const titleText = document.getElementById('oauth-title');
+            const logoContainer = document.getElementById('oauth-logo-container');
+            const avatar = document.getElementById('oauth-avatar');
+            
+            document.getElementById('oauth-name').innerText = name;
+            document.getElementById('oauth-email').innerText = email;
+            avatar.innerText = name.charAt(0).toUpperCase();
+
+            if (provider === 'Microsoft') {
+                headerText.innerText = 'Sign in - Microsoft';
+                titleText.innerText = 'Sign in';
+                logoContainer.innerHTML = '<svg class="w-8 h-8" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>';
+                avatar.style.backgroundColor = '#05a6f0';
+            } else {
+                headerText.innerText = 'Sign in - Google Accounts';
+                titleText.innerText = 'Sign in with Google';
+                logoContainer.innerHTML = '<svg class="w-8 h-8" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>';
+                avatar.style.backgroundColor = '#4285F4';
+            }
+
+            const overlay = document.getElementById('mock-oauth-overlay');
+            const card = document.getElementById('oauth-card');
+            
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            setTimeout(() => card.classList.remove('scale-95'), 10);
+        }
+
+        function closeMockOAuth() {
+            const overlay = document.getElementById('mock-oauth-overlay');
+            const card = document.getElementById('oauth-card');
+            
+            card.classList.add('scale-95');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }, 180);
+        }
+
+        function executeOAuthLogin() {
+            const email = document.getElementById('email').value.trim();
+            localStorage.setItem('syncpolis_active_session', email);
+            closeMockOAuth();
+            window.location.replace('new_new_index.html');
+        }
+    </script>
+</body>
+</html>
