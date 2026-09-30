@@ -48,7 +48,7 @@ Governments across India and BRICS nations face a critical bottleneck: public in
 ---
 
 ## 👨‍💻 Team: UrbanPulse Alchemists
-We are a squad of Semester 3 B.Sc. (Hons) Computer Science students from the College of Vocational Studies (CVS), University of Delhi, using Google Cloud, AI Studio, and the Gemini API to turn raw community data into actionable insights for local administrators[cite: 13].
+We are a squad of Semester 3 B.Sc. (Hons) Computer Science students from the College of Vocational Studies (CVS), University of Delhi, using Google Cloud, AI Studio, and the Gemini API to turn raw community data into actionable insights for local administrators.
 
 *   **Raj Shah** 
 *   **Riya Chauhan**
